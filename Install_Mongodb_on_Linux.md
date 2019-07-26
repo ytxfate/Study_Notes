@@ -47,3 +47,10 @@ setParameter:
 ```
 mongod -f ./mongodb.conf
 ```
+
+```
+创建用户
+db.createUser({user:'root',pwd:'root',roles:[{'role': 'root', db: 'admin'}]})
+db.createUser({user:'admin',pwd:'admin',roles:[{'role': 'userAdminAnyDatabase', db: 'admin'}]})
+db.createUser({user:'ztej',pwd:'ztej',roles:[{'role': 'readWrite', db: 'ztej'}]})
+```
