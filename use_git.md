@@ -29,3 +29,5 @@ git push -u origin master
 git checkout dev    # 切换到 dev 分支
 git branch -a       # 查看所有分支（最好 git pull 拉取最后一次提交后使用）
 ```
+
+![git 操作](https://raw.githubusercontent.com/ytxfate/Study_Notes/master/git_operate.jpg)
