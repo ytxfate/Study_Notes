@@ -56,3 +56,12 @@ https://docs.docker.com/install/linux/docker-ce/centos/
 > sudo chmod a+rw /var/run/docker.sock
 > ```
 
+### 后台运行 docker  
+> ```
+> docker run -itd --name centos7 centos
+> ```
+
+### 进入正在运行的 docker 容器
+> ```
+> docker exec -it centos7 /bin/bash
+> ```
