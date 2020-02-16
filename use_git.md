@@ -31,3 +31,7 @@ git branch -a       # 查看所有分支（最好 git pull 拉取最后一次提
 ```
 
 ![git 操作](https://raw.githubusercontent.com/ytxfate/Study_Notes/master/git_operate.jpg)
+
+```
+若修改已提交到远程仓库，git reset 之后使用 git push -f 提交修改
+```
