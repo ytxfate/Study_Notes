@@ -11,7 +11,7 @@ yum install libcurl openssl
 ```
 tar -zxvf mongodb-linux-x86_64-rhel70-4.0.5.tgz
 ```
- 
+
 ##### 3、将解压得到的目录移动到 /opt 并重命名为 mongodb-4.0.5（文件名随意）  
 ##### 4、配置 PATH 环境变量（此步可以最后设置）  
 ##### 5、配置 mongodb.conf 文件（示例如下）：  
@@ -54,3 +54,12 @@ db.createUser({user:'root',pwd:'root',roles:[{'role': 'root', db: 'admin'}]})
 db.createUser({user:'admin',pwd:'admin',roles:[{'role': 'userAdminAnyDatabase', db: 'admin'}]})
 db.createUser({user:'ztej',pwd:'ztej',roles:[{'role': 'readWrite', db: 'ztej'}]})
 ```
+
+```json
+数据表(collection)导入\导出
+1. 导出
+mongoexport --host=127.0.0.1 --port=27017 --db=test --username=test --password=test --collection=test --type=json -o test.json
+2. 导入
+mongoimport --host=127.0.0.1 --port=27017 --db=test --username=test --password=test --collection=test2 --file=./test.json --type=json
+```
+
