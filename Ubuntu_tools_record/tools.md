@@ -58,6 +58,12 @@
 
 23. Google 拼音
 
+24. alacritty(终端)
+
+25. ranger (终端文件管理)
+
+26. neovim (增强性 vim)
+
 ## 2 Command Tools
 
 1. htop

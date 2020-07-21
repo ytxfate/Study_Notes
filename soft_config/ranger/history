@@ -1,0 +1,18 @@
+open_with 0
+search go
+search main.go
+search main
+
+h
+?
+search pic
+find pic
+find proj
+find ra
+find config
+find rang
+find .conf
+open_with 
+find dow
+shell l
+find pro
