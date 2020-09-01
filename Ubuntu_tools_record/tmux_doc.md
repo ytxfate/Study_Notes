@@ -19,7 +19,7 @@
 4. 进入已有会话
 
    ```shell
-   tmux -S {session_name/session_id}
+   tmux attach -t {session_name}
    ```
 
 5. 列出所有当前会话(tmux 终端内)
