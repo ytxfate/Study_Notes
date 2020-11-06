@@ -35,3 +35,13 @@ git branch -a       # 查看所有分支（最好 git pull 拉取最后一次提
 ```
 若修改已提交到远程仓库，git reset 之后使用 git push -f 提交修改
 ```
+
+### 问题解决思路:
+
+1 远程仓库更新，本地的版本确认无用，可以强拉覆盖本地版本
+
+```bash
+git fetch --all
+git reset --hard origin/dev
+git pull
+```
