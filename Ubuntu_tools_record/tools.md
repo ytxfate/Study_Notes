@@ -64,6 +64,8 @@
 
 26. neovim (增强性 vim)
 
+27. peek (GIF 录制)
+
 ## 2 Command Tools
 
 1. htop
