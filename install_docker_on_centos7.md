@@ -65,3 +65,51 @@ https://docs.docker.com/install/linux/docker-ce/centos/
 > ```
 > docker exec -it centos7 /bin/bash
 > ```
+
+## docker 根目录迁移
+
+1. 找到 `Docker` 根目录
+
+   ```bash
+   docker info | grep "Docker Root Dir"
+   输出:
+    Docker Root Dir: /var/lib/docker
+   ```
+
+2. 停掉`Docker`服务
+
+   ```bash
+   systemctl stop docker
+   ```
+
+3. 迁移`Docker`根目录
+
+   ```
+   rsync -avzP /var/lib/docker /opt/docker_dir
+   NOTE:
+   	/opt/docker_dir 目录需提前建好
+   rsync 参数解释：
+       -a，归档模式，表示递归传输并保持文件属性。
+       -v，显示rsync过程中详细信息。可以使用"-vvvv"获取更详细信息。
+       -P，显示文件传输的进度信息。(实际上"-P"="--partial --progress"，其中的"--progress"才是显示进度信息的)。
+       -z,   传输时进行压缩提高效率。
+   ```
+
+4. 将原来的`Docker`根目录移走
+
+   ```bash
+   cd /var/lib && mv docker docker.bak
+   ```
+
+5. 添加软连接
+
+   ```bash
+   ln -s /opt/docker_dir/docker /var/lib/docker
+   ```
+
+6. 重启`Docker`服务
+
+   ```bash
+   systemctl start docker
+   ```
+
