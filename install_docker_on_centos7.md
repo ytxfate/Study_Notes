@@ -66,7 +66,7 @@ https://docs.docker.com/install/linux/docker-ce/centos/
 > docker exec -it centos7 /bin/bash
 > ```
 
-## docker 根目录迁移
+## docker 根目录迁移(<font color="red">不推荐方案</font>)
 
 1. 找到 `Docker` 根目录
 
@@ -112,4 +112,28 @@ https://docs.docker.com/install/linux/docker-ce/centos/
    ```bash
    systemctl start docker
    ```
+
+## docker 根目录迁移(<font color="red">推荐方案 18.06.1 测试成功</font>)
+
+​	1 ~ 3 步骤与上面相同
+
+4. 修改 `docker.service`文件
+
+   ```bash
+   文本内容：
+   ExecStart=/usr/bin/dockerd
+   修改成如下内容：
+   ExecStart=/usr/bin/dockerd --graph /opt/docker_dir/docker
+   ```
+
+5. reload配置文件, 重启docker服务
+
+   ```bash
+   systemctl daemon-reload
+   systemctl start docker.service
+   ```
+
+6. `docker info`查看是否修改成功
+
+7. 重启之前容器
 
