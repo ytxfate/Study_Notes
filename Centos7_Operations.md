@@ -32,3 +32,8 @@ yum install ntp
 2. 同步时服务器
 ntpdate cn.ntp.org.cn
 ```
+
+4. 修改时区
+```
+ln -sf /usr/share/zoneinfo/Asia/Shanghai  /etc/localtime
+```
