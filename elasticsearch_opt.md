@@ -106,6 +106,16 @@ discovery.zen.minimum_master_nodes: 2  # 为了避免脑裂，集群节点数最
 # For more information, consult the discovery and cluster formation module documentation.
 # ---------------------------------- Gateway -----------------------------------
 gateway.recover_after_nodes: 3 # 设置集群中N个节点启动时进行数据恢复，默认为1
+# ---------------------------------- Various -----------------------------------
+#
+# Require explicit names when deleting indices:
+#
+#action.destructive_requires_name: true
+bootstrap.system_call_filter: false
+http.cors.allow-origin: "*"
+http.cors.enabled: true
+http.cors.allow-headers : X-Requested-With,X-Auth-Token,Content-Type,Content-Length,Authorization
+http.cors.allow-credentials: true
 ```
 
 es_node2 不同于 es_node1的地发如下:
