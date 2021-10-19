@@ -124,6 +124,29 @@ network.host: es_node3
 network.publish_host: es_node3
 ```
 
+>  Node节点组合
+>
+>  1. 主节点+数据节点(master+data):节点**即有称为主节点的资格，又存储数据**
+>
+>  	```
+>	node.master: true
+>  	node.data: true
+>  	```
+>  
+>  2. 数据节点(data):节点没有成为主节点的资格，**不参与选举，只会存储数据**
+>
+>  	```
+>	node.master: false
+>  	node.data: true
+>	```
+>  
+>  3. 客户端节点(client):不会成为主节点，也不会存储数据，主要是针对海量请求的时候，可以进行**负载均衡**
+>  
+>  	```
+>	node.master: false
+>  	node.data: false
+>	```
+
 ### 4 启动
 
 依次在3台主机的`elasticsearch`目录下使用`./bin/elasticsearch -d`启动ES
