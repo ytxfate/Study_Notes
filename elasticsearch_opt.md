@@ -28,7 +28,7 @@ Elasticsearch 集群搭建
 
 3. 修改最大虚拟内存太小
 
-   `/etc/sysctl.conf`文件添加下面配置：
+   `/etc/sysctl.conf`文件添加下面配置(sysctl -p 生效)：
 
    ```
    vm.max_map_count=655360
