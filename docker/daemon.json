@@ -1,0 +1,20 @@
+{
+    "exec-opts": [
+        "native.cgroupdriver=systemd"
+    ],
+    "log-driver": "json-file",
+    "log-opts": {
+        "max-size": "100m"
+    },
+    "storage-driver": "overlay2",
+    "storage-opts": [
+        "overlay2.override_kernel_check=true"
+    ],
+    "registry-mirrors": [
+        "https://xxx.mirror.aliyuncs.com"
+    ],
+    "host": [
+        "tcp://0.0.0.0:2375",
+        "unix:///var/run/docker.sock"
+    ]
+}

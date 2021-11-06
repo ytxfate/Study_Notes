@@ -1,4 +1,4 @@
-# Install Docker on Centos7
+# Install Docker Engine on CentOS7
 
 ### root 用户执行以下操作
 https://docs.docker.com/install/linux/docker-ce/centos/
@@ -136,4 +136,30 @@ https://docs.docker.com/install/linux/docker-ce/centos/
 6. `docker info`查看是否修改成功
 
 7. 重启之前容器
+
+
+# # Install Docker Engine from binaries
+
+1. 下载 [docker](https://download.docker.com/linux/static/stable/) 二进制包
+
+   ```bash
+   tar -xzvf /path/to/<FILE>.tar.gz
+   sudo cp docker/* /usr/bin/
+   # 启动 不建议使用此方法，推荐 systemd 管理
+   sudo dockerd &
+   ```
+
+2. systemd 管理
+
+   1. 将 `docker.service` 及 `docker.socket` 复制到 `/etc/systemd/system` 目录下
+
+   2. 执行一下命令
+
+      ```
+      systemctl daemon-reload
+      systemctl restart docker.service
+      systemctl enable docker.service (设置开机启动)
+      ```
+
+3. 配置 `daemon.json` 
 
