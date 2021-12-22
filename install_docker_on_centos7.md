@@ -196,7 +196,7 @@ https://docs.docker.com/install/linux/docker-ce/centos/
 5. 新建构建器
 
    ```bash
-   docker buildx inspect mybuilder --bootstrap
+   docker buildx create --use --name mybuilder
    ```
 
 6. 启动构建器
