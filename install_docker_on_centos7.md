@@ -138,7 +138,7 @@ https://docs.docker.com/install/linux/docker-ce/centos/
 7. 重启之前容器
 
 
-# # Install Docker Engine from binaries
+# Install Docker Engine from binaries
 
 1. 下载 [docker](https://download.docker.com/linux/static/stable/) 二进制包
 
@@ -162,4 +162,61 @@ https://docs.docker.com/install/linux/docker-ce/centos/
       ```
 
 3. 配置 `daemon.json` 
+
+# docker启用buildx插件，构建跨平台镜像
+1. 更新docker版本到大于或等于19.03
+
+2. 开启新特性（二选一，推荐第二种方式）
+
+   1. 设置环境变量
+
+      ```shell
+      export DOCKER_CLI_EXPERIMENTAL=enabled
+      ```
+
+   2. 修改`～/.docker/config.json`,添加配置
+
+      ```json
+      "experimental": "enabled"
+      ```
+
+3. 启用binfmt_misc
+
+   ```bash
+   docker run --rm --privileged docker/binfmt:66f9012c56a8316f9244ffd7622d7c21c1f6f28d
+   ```
+
+4. 验证是 binfmt_misc 否开启
+
+   ```bash
+   ls -al /proc/sys/fs/binfmt_misc/
+   cat /proc/sys/fs/binfmt_misc/qemu-aarch64
+   ```
+
+5. 新建构建器
+
+   ```bash
+   docker buildx inspect mybuilder --bootstrap
+   ```
+
+6. 启动构建器
+
+   ```bash
+   docker buildx inspect mybuilder --bootstrap
+   ```
+
+7. 查看构建器及其所支持的cpu架构
+
+   ```bash
+   docker buildx ls
+   ```
+
+8. 创建Dockerfile
+
+9. 构建跨平台镜像
+
+   ```bash
+   docker buildx build --platform=linux/arm64 -f Dockerfile -t 'xxx-arm:v1.0' -o type=docker .
+   ```
+
 
