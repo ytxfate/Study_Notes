@@ -197,6 +197,8 @@ https://docs.docker.com/install/linux/docker-ce/centos/
 
    ```bash
    docker buildx create --use --name mybuilder
+   # 国内
+   docker buildx create --use --name mybuilder --driver docker-container --driver-opt image=dockerpracticesig/buildkit:master
    ```
 
 6. 启动构建器
