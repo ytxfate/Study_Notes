@@ -27,3 +27,11 @@
     }
     ```
 
+4. 日志分割
+    ```
+    修改文件名称
+    mv access.log access.log.1
+    mv error.log error.log.1
+    
+    nginx -s reopen
+    ```
