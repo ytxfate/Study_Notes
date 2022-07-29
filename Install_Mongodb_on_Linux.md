@@ -63,3 +63,8 @@ mongoexport --host=127.0.0.1 --port=27017 --db=test --username=test --password=t
 mongoimport --host=127.0.0.1 --port=27017 --db=test --username=test --password=test --collection=test2 --file=./test.json --type=json
 ```
 
+##### 日志分割  
+```
+use admin
+db.runCommand({logRotate:1})
+```
