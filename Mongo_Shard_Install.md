@@ -255,7 +255,7 @@ chmod 600 mongodb-keyfile
 
 ```js
 //开启 db_name 数据库分片功能
-> db.runCommand({enablesharding:"db_name"}};
+> db.runCommand({enablesharding:"db_name"})
 
 //指定 db_name 数据库需要分片的集合和片键
 > db.runCommand({shardcollection:"db_name.collection_name",key:{xx:1}})
