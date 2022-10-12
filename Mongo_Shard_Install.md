@@ -240,7 +240,11 @@ sharding:
 
 `config server`->`shard`->`mongos`
 
+> <font color="red">注: 副本集建议按: 主节点 > 副节点 > 选举节点 顺序启动, 倒序关闭</font>
+
 ### 5 添加认证
+
+> 登录任意mongos节点创建用户(<font color="red">注:mongos节点创建的用户不会同步到shard节点上, shard各副本集需要单独创建用户</font>),然后依次关闭`config server`->`shard`->`mongos`各节点
 
 ```shell
 # 生成 mongodb-keyfile
