@@ -161,7 +161,7 @@ https://docs.docker.com/install/linux/docker-ce/centos/
       systemctl enable docker.service (设置开机启动)
       ```
 
-3. 配置 `daemon.json` 
+3. 配置 `daemon.json` (该文件放在`/etc/docker/`目录下)
 
 # docker启用buildx插件，构建跨平台镜像
 1. 更新docker版本到大于或等于19.03
