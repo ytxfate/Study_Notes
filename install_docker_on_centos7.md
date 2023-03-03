@@ -221,4 +221,9 @@ https://docs.docker.com/install/linux/docker-ce/centos/
    docker buildx build --platform=linux/arm64 -f Dockerfile -t 'xxx-arm:v1.0' -o type=docker .
    ```
 
+# 公共网络创建命令
+
+```bash
+docker network create --subnet=192.111.0.0/16 --gateway=192.111.0.1 docker_public_network
+```
 
