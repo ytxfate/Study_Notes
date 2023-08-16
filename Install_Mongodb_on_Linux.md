@@ -63,6 +63,14 @@ mongoexport --host=127.0.0.1 --port=27017 --db=test --username=test --password=t
 mongoimport --host=127.0.0.1 --port=27017 --db=test --username=test --password=test --collection=test2 --file=./test.json --type=json
 ```
 
+```json
+数据库(database)备份\恢复
+1. 备份(会在当前目录下新建一个test库名称的目录)
+mongodump --host=127.0.0.1 --port 27017 --db=test -o ./ --gzip
+2. 导入(drop会清空test2库后导入数据)
+mongorestore --host=127.0.0.1 --port 27017 --db=test2 --gzip --dir test --drop
+```
+
 ##### 日志分割  
 ```
 use admin
