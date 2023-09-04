@@ -54,7 +54,7 @@ mongod -f ./mongodb.conf
 创建用户
 db.createUser({user:'root',pwd:'root',roles:[{'role': 'root', db: 'admin'}]})
 db.createUser({user:'admin',pwd:'admin',roles:[{'role': 'userAdminAnyDatabase', db: 'admin'}]})
-db.createUser({user:'ztej',pwd:'ztej',roles:[{'role': 'readWrite', db: 'ztej'}]})
+db.createUser({user:'testuser',pwd:'testuser',roles:[{'role': 'readWrite', db: 'testdb'}]})
 ```
 
 ##### 8、导入/导出
@@ -92,3 +92,52 @@ mongorestore --nsInclude='test.t' --nsFrom='test.t' --nsTo='test2.t' --dir . --d
 use admin
 db.runCommand({logRotate:1})
 ```
+
+##### 11 单表权限控制
+
+```js
+参考: https://www.mongodb.com/docs/v4.2/reference/method/db.createRole/
+// 创建角色
+db.createRole(
+    {
+        role: "testRead",
+        privileges: [
+            {resource: {db: "testdb",collection: "testcoll"}, actions: ["find"]},
+            {resource: {db: "testdb",collection: "testcoll2"}, actions: ["insert", "remove", "update", "find"]},	// 增删改查
+        ],
+        roles: []	// 继承的权限(设置单表权限的时候不需要)
+    }
+)
+// 修改角色权限范围
+db.updateRole(
+    "testRead",
+    {
+        privileges: [
+            {resource: {db: "testdb",collection: "testcoll"}, actions: ["find"]},
+            {resource: {db: "testdb",collection: "testcoll2"}, actions: ["insert"]},
+        ]
+    }
+)
+// 查询角色
+db.getRole('testRead', {'showPrivileges': 1})
+
+// 修改用户角色
+db.updateUser(
+	"testuser",
+	{
+		roles : [
+			{ role: "testRead", db: "testdb" },
+		],
+	}
+)
+```
+
+##### 12 修改密码
+
+```js
+db.changeUserPassword("testuser", passwordPrompt())
+db.changeUserPassword("testuser", "123456")
+```
+
+
+
