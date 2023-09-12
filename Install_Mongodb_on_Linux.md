@@ -88,9 +88,17 @@ mongorestore --nsInclude='test.t' --nsFrom='test.t' --nsTo='test2.t' --dir . --d
 
 ##### 10、日志分割
 
+方法1:
+
 ```
 use admin
 db.runCommand({logRotate:1})
+```
+
+方法2:
+
+```shell
+mongo --host 127.0.0.1 --port 27017 --authenticationDatabase admin --username root --password root --eval "db.runCommand({\"logRotate\":1})" admin
 ```
 
 ##### 11 单表权限控制
