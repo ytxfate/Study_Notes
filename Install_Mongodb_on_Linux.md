@@ -101,6 +101,12 @@ db.runCommand({logRotate:1})
 mongo --host 127.0.0.1 --port 27017 --authenticationDatabase admin --username root --password root --eval "db.runCommand({\"logRotate\":1})" admin
 ```
 
+方法3:
+
+```shell
+kill -SIGUSR1 {mongod PID}
+```
+
 ##### 11 单表权限控制
 
 ```js
