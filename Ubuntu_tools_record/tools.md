@@ -90,9 +90,9 @@
 
 4. Google 翻译
 
-5. Infinity 新标签页 (Pro)
+5. Infinity 新标签页 (Pro) `qq:2...`
 
-6. LastPass: Free Password Manager
+6. LastPass: Free Password Manager `gmail:x...`
 
 7. Octotree
 
@@ -106,9 +106,11 @@
 
 12. 划词翻译
 
-13. 捕捉网页截图 - FireShot的
+13. 沙拉查词
 
-14. 视频下载器 - CoCoCut
+14. 捕捉网页截图 - FireShot的
+
+15. 视频下载器 - CoCoCut
 
 ## 4 VS Code Extensions
 
