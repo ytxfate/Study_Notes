@@ -1,0 +1,10 @@
+{
+  "accentColor": "",
+  "interfaceFontFamily": "Monaco",
+  "textFontFamily": "Monaco",
+  "monospaceFontFamily": "Monaco",
+  "cssTheme": "Pisum",
+  "enabledCssSnippets": [
+    "编辑器内容区域宽度"
+  ]
+}
