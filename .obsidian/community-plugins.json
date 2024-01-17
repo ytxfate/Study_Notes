@@ -2,9 +2,14 @@
   "calendar",
   "dataview",
   "editing-toolbar",
-  "homepage",
-  "obsidian-git",
-  "table-editor-obsidian",
   "obsidian-excalidraw-plugin",
-  "quickadd"
+  "obsidian-image-toolkit",
+  "obsidian-kanban",
+  "table-editor-obsidian",
+  "homepage",
+  "tag-wrangler",
+  "obsidian-table-generator",
+  "quickadd",
+  "obsidian-paste-image-rename",
+  "obsidian-git"
 ]
