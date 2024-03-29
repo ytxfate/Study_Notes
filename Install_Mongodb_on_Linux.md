@@ -83,7 +83,7 @@ mongorestore --host=127.0.0.1 --port 27017 --db=test2 --gzip --dir test --drop
 2.2 全量恢复( test库 恢复到 test2库 )
 mongorestore --nsInclude='test.*' --nsFrom='test.*' --nsTo='test2.*' --dir . --drop --gzip
 2.3 单表恢复( test库的t表 恢复到 test2库t表[t表名称可修改] nsFrom与nsTo需要相匹配)
-mongorestore --nsInclude='test.t' --nsFrom='test.t' --nsTo='test2.t' --dir . --drop --gzip
+mongorestore --nsInclude='test.t' --nsFrom='test.t' --nsTo='test2.t' --dir . --drop --gzip --username xxx --password xxx --authenticationDatabase test2
 ```
 
 ##### 10、日志分割
