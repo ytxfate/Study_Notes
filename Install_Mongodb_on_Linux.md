@@ -172,3 +172,10 @@ db.collection_name.stats().storageSize/1024/1024
 //     该命令会阻止所有其他活动。从版本2.2开始，compact只阻止它正在压缩的数据库的活动。
 db.runCommand({compact:'collection_name'})
 ```
+
+##### 14 查看系统状态
+```
+mongostat -h 127.0.0.1 --port 27017 --authenticationDatabase=admin -u root -p root
+
+mongotop -h 127.0.0.1 --port 27017 --authenticationDatabase=admin -u root -p root
+```
