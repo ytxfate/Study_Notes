@@ -1,0 +1,46 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app: nginx
+  name: nginx-deployment1
+  namespace: nginx
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: nginx
+  template:
+    metadata:
+      labels:
+        app: nginx
+    spec:
+      containers:
+      - image: nginx:1.21.4
+        ports:
+        - containerPort: 80
+        name: nginx
+        volumeMounts:
+        - name: conf
+          mountPath: /etc/nginx/nginx.conf
+        - name: log
+          mountPath: /var/log/nginx
+        - name: html
+          mountPath: /etc/nginx/html
+      tolerations:
+      - key: "key"
+        operator: "Equal"
+        value: "nginx"
+        effect: "NoSchedule"
+      volumes:
+      - name: conf
+        hostPath:
+          path: /home/ytx/projectCodes/self-projects/study_k8s/nginx/conf/nginx.conf
+      - name: log
+        hostPath:
+          path: /home/ytx/projectCodes/self-projects/study_k8s/nginx/logs
+          type: Directory
+      - name: html
+        hostPath:
+          path: /home/ytx/projectCodes/self-projects/study_k8s/nginx/html
+          type: Directory

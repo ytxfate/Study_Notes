@@ -185,3 +185,14 @@ kubectl proxy
 ```
 [[dashboard-adminuser.yaml]]
 [[recommended.yaml]]
+#### Nginx
+```
+kubectl apply -f nginx-namespace.yaml
+kubectl apply -f nginx-deployment.yaml
+kubectl apply -f nginx-service.yaml
+
+访问 http://127.0.0.1:31090/
+```
+[[nginx-namespace.yaml]]
+[[nginx-deployment.yaml]]
+[[nginx-service.yaml]]
