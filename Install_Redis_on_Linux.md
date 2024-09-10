@@ -25,3 +25,9 @@ make
 ```
 redis-server /opt/redis-5.0.5/bin/redis.conf
 ```
+##### 7、命令记录
+###### 1 批量删除key
+```shell
+# 删除 db15 中 xxx 开头的key
+./redis-cli -a {password} -n 15 keys "xxx*" | xargs ./redis-cli -a {password} -n 15 del
+```
