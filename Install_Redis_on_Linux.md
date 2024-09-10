@@ -31,3 +31,7 @@ redis-server /opt/redis-5.0.5/bin/redis.conf
 # 删除 db15 中 xxx 开头的key
 ./redis-cli -a {password} -n 15 keys "xxx*" | xargs ./redis-cli -a {password} -n 15 del
 ```
+###### 2 监控模式
+```shell
+./redis-cli -a {password} monitor
+```
