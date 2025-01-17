@@ -29,6 +29,8 @@ storage:
 # 后台进程
 processManagement:
   fork: true
+  # 指定 pid 文件, 方便 logrotate 分割日志
+  pidFilePath: /opt/mongodb-4.0.5/mongod.pid
 
 # IP 及 端口
 net:
@@ -178,4 +180,27 @@ db.runCommand({compact:'collection_name'})
 mongostat -h 127.0.0.1 --port 27017 --authenticationDatabase=admin -u root -p root
 
 mongotop -h 127.0.0.1 --port 27017 --authenticationDatabase=admin -u root -p root
+```
+
+##### 15 logrotate 日志分割
+```
+/opt/mongodb-4.0.5/log/*.log {     # 需要进行日志切割的日志文件的位置
+    # 条件：大于这个条件时会进行切割
+    size 200M
+    daily                    # 执行周期：daily，weekly，monthly，yearly
+    missingok
+    # 保留多少个，超过这个数时，最久的日志文件将会被删除
+    rotate 5
+    copytruncate             # 把正在输出的日志拷贝一份出来，然后清空源文件
+    dateext                  # 轮询的日志以日期结尾
+    notifempty               # 忽略空文件
+    missingok                # 如果文件不存在则忽略
+    postrotate               # 脚本开始标志
+        /bin/kill -SIGUSR1 `cat /opt/mongodb-4.0.5/mongod.pid 2>/dev/null` > /dev/null 2>&1
+    endscript                # 脚本结束标志
+    compress                 # 切割后压缩，也可以为nocompress
+    delaycompress            # 切割时对上次的日志文件进行压缩
+    # 使用指定模式创建日志文件
+    create 640 mongodb mongodb
+}
 ```

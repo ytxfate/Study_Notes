@@ -44,6 +44,8 @@ storage:
 # 后台进程
 processManagement:
   fork: true
+  # 指定 pid 文件, 方便 logrotate 分割日志
+  pidFilePath: /opt/mongodb/mongod.pid
 
 # IP 及 端口
 net:
