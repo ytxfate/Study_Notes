@@ -22,3 +22,11 @@ sysctl -p
 ```
 
 >[!Note] pid_max 最大值 2<sup>22</sup> = 4194304 
+
+#### 其他
+- 查看lwp(轻量级进程，即线程)最多的进程
+```bash
+ps -eo nlwp,pcpu,user,pid,ppid,args --sort -nlwp | head -n 20
+
+-nlwp 为 按nlwp倒序排序
+```
