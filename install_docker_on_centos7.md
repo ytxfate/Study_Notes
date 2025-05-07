@@ -183,7 +183,7 @@ https://docs.docker.com/install/linux/docker-ce/centos/
 3. 启用binfmt_misc
 
    ```bash
-   docker run --rm --privileged docker/binfmt:66f9012c56a8316f9244ffd7622d7c21c1f6f28d
+   docker run --rm --privileged docker/binfmt:820fdd95a9972a5308930a2bdfb8573dd4447ad3
    ```
 
 4. 验证是 binfmt_misc 否开启
@@ -194,11 +194,16 @@ https://docs.docker.com/install/linux/docker-ce/centos/
    ```
 
 5. 新建构建器
+创建`buildkitd.toml`文件, 文件内容如下:
+```
+[registry."docker.io"]
+  mirrors = ["docker.1ms.run"]
+```
 
    ```bash
    docker buildx create --use --name mybuilder
    # 国内
-   docker buildx create --use --name mybuilder --driver docker-container --driver-opt image=dockerpracticesig/buildkit:master
+   docker buildx create --use --name mybuilder --driver docker-container --driver-opt image=dockerpracticesig/buildkit:master --config buildkitd.toml
    ```
 
 6. 启动构建器
