@@ -35,3 +35,21 @@ redis-server /opt/redis-5.0.5/bin/redis.conf
 ```shell
 ./redis-cli -a {password} monitor
 ```
+
+##### 8、redis.service
+```
+[Unit]
+Description=Redis
+After=network.target
+
+[Service]
+Type=forking
+ExecStart=/PATH_TO_SOFT/redis/redis-server /PATH_TO_SOFT/redis/redis.conf
+ExecReload=/PATH_TO_SOFT/redis/redis-server /PATH_TO_SOFT/redis/redis.conf -s reload
+ExecStop=/PATH_TO_SOFT/redis/redis-server /PATH_TO_SOFT/redis/redis.conf -s stop
+PrivateTmp=true
+
+[Install]
+WantedBy=multi-user.target
+```
+> PATH_TO_SOFT 修改为`redis`所在对应目录

@@ -204,3 +204,23 @@ mongotop -h 127.0.0.1 --port 27017 --authenticationDatabase=admin -u root -p roo
     create 640 mongodb mongodb
 }
 ```
+
+##### 16 mongodb.service
+```
+[Unit]
+Description=mongodb
+After=network.target remote-fs.target nss-lookup.target
+
+[Service]
+Type=forking
+RuntimeDirectory=mongodb
+RuntimeDirectoryMode=0751
+PIDFile=/PATH_TO_SOFT/mongodb/mongodb.pid
+ExecStart=/PATH_TO_SOFT/mongodb/bin/mongod -f /PATH_TO_SOFT/mongodb/bin/mongodb.conf
+ExecStop=/PATH_TO_SOFT/mongodb/bin/mongod --shutdown -f /PATH_TO_SOFT/mongodb/bin/mongodb.conf
+PrivateTmp=false
+
+[Install]
+WantedBy=multi-user.target
+```
+> PATH_TO_SOFT 修改为`mongodb`所在对应目录
