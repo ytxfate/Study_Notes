@@ -87,3 +87,24 @@ rsync -az --bwlimit=10m --delete --password-file=./testrsync.passwd testrsync@xx
 0 1 * * * rsync -az --bwlimit=10m --delete --password-file=./testrsync.passwd ./project testrsync@xxx.xxx.xxx.xxx::backup
 # 每天凌晨1点执行一次同步
 ```
+9. `--include-from` 方式包含部分文件 <font color="#ffc000">(由于顺序匹配, `include` 类过滤最好在 `exclude` 类过滤之前)</font>
+```bash
+rsync -az --bwlimit=10m --delete --include-from=include-file.txt --password-file=./testrsync.passwd ./project testrsync@xxx.xxx.xxx.xxx::backup
+```
+`include-file.txt` 文件内容如下:
+```
+*/cc.txt
+```
+10. `--exclude-from` 方式排除部分文件
+```
+rsync -az --bwlimit=10m --delete --exclude-from=exclude-file.txt --password-file=./testrsync.passwd ./project testrsync@xxx.xxx.xxx.xxx::backup
+```
+`exclude-file.txt` 文件内容如下:
+```
+*.bak*
+modules/*
+*.tar
+*.tar.gz
+*.tgz
+*.zip
+```
