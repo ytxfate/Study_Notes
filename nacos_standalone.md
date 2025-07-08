@@ -46,6 +46,8 @@ After=network.target
 
 [Service]
 Type=forking
+# xxx 用户启动服务
+User=xxx
 ExecStart=PATH_TO_NACOS/bin/startup.sh -m standalone
 ExecReload=PATH_TO_NACOS/bin/shutdown.sh
 ExecStop=PATH_TO_NACOS/bin/shutdown.sh
