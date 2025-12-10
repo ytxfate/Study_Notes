@@ -161,13 +161,14 @@ db.changeUserPassword("testuser", "123456")
 // 查看当前库所有表的空间占用
 db.getCollectionNames().forEach( function (item) { 
     stats=db.runCommand({collStats:item});
-    sizeGB = stats.storageSize/1024/1024;
-    prettyGB = Math.round(sizeGB)+ 'MB';
-    print(item, prettyGB)
+    s = stats.storageSize/1024/1024;
+    p = s.toFixed(3)+ 'MB';
+    print(item, p)
 })
 
 // 查看 collection_name 表的空间占用
-db.collection_name.stats().storageSize/1024/1024
+db.collection_name.stats().storageSize/1024/1024    // MB
+db.collection_name.stats(1024*1024).storageSize     // MB
 
 // compact 重写集合中的所有数据以及该集合上的所有索引并对其进行碎片整理
 // 注: 副本集需要现在副节点执行, 主节点执行需要加 force:true 选项
