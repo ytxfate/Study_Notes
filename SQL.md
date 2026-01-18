@@ -581,4 +581,18 @@ from ytx.job_test t
 join ytx.job j on j.job_id = t.job_id and j.job_id in (3,4);
 
 truncate table ytx.job_test; -- 快速删除数据  drop table + create table
+
+-- 视图
+create or replace view v_emp_dept_job
+as
+	select e.emp_id, e.emp_name, d.dept_id, d.dept_name, j.job_id, j.job_title
+	from ytx.employee e 
+	left join ytx.department d on e.dept_id = d.dept_id
+	left join ytx.job j on e.job_id = j.job_id
+;
+
+select * from ytx.v_emp_dept_job;
+
+drop view if exists ytx.v_emp_dept_job;
+
 ```
