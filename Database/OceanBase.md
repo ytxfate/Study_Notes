@@ -153,3 +153,24 @@ SHOW GRANTS FOR user1;
 REVOKE ALL PRIVILEGES, GRANT option FROM user1;
 ```
 
+## 导入导出
+在 [OceanBase 软件下载中心](https://www.oceanbase.com/softwarecenter) 页面 `迁移同步工具` 里下载 `OceanBase 导数工具` , 解压后将压缩包的 `bin` 目录配置到 `PATH` 环境变量中
+
+导出 `xx` ,`xx2` 表结构(DDL)及数据
+```bash
+obdumper -h 127.0.0.1 -P 2881 -u user1@mq_t1 -p password1 -D db1 --table 'xx,xx2' --csv --ddl -f ./ --skip-check-dir
+
+注:
+--table '*' 则是导出所有表
+--table 'xx,xx2' 替换成 --all 会导出库所有表及库用户信息, 此时 -u 需要替换成库 root@mq_t1 用户
+```
+>[!Warning] 导出涉及多个库时, 最好单独指定不同的 `-f` 路径, 防止 `obloader` 使用 `--table '*'` 时把所有库的表全部导入当前库
+
+导入 `xx` ,`xx2` 表结构(DDL)及数据
+```bash
+obloader -h 127.0.0.1 -P 2881 -u user1@mq_t1 -p password1 -D db1 --table 'xx,xx2' --csv --ddl -f ./
+
+--table '*' 则是导入 -f 目录下所有表
+--table 'xx,xx2' 替换成 --all 会导入 -f 目录下所有表及库用户信息, 此时 -u 需要替换成库 root@mq_t1 用户
+```
+>[!Warning] 使用 `--table '*'` 时 `-f` 目录最好只有一个库的表数据
