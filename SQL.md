@@ -551,7 +551,18 @@ select * from ytx.job_test;
 insert into ytx.job_test(job_id,job_title)
 select job_id,job_title from ytx.job j 
 on duplicate key update -- 主键重复则更新
-job_title=j.job_title;
+ job_title=j.job_title
+-- ,job_title=j.job_title -- 多列则逗号分割
+;
+
+insert into ytx.job_test(job_id,job_title)
+values 
+ (111, "111")
+,(222, "222")
+on duplicate key update -- 主键重复则更新
+ job_title=VALUES(job_title)
+-- ,job_title=VALUES(job_title) -- 多列则逗号分割
+;
 
 -- 主键重复则替换其余字段的值
 replace into ytx.job_test(job_id,job_title)
