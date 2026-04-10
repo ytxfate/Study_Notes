@@ -338,3 +338,73 @@ obloader -h 127.0.0.1 -P 2881 -u user1@mq_t1 -p password1 -D db1 --table 'xx,xx2
 ```
 >[!Warning] 使用 `--table '*'` 时 `-f` 目录最好只有一个库的表数据
 
+## 其他
+
+查看库表数据量
+```sql
+select
+	 TABLE_SCHEMA as '库'
+	,TABLE_NAME as '表'
+	,TABLE_ROWS as '记录量'
+	,TRUNCATE(DATA_LENGTH / 1024 / 1024 / 1024, 2) as '数据容量(GB)'
+	,TRUNCATE(INDEX_LENGTH / 1024 / 1024 / 1024, 2) as '索引容量(GB)'
+from
+	information_schema.tables
+```
+
+创建动态分区表
+```sql
+CREATE TABLE xxx (
+    total_bal decimal(25,5) NOT NULL COMMENT '金额',
+    data_date date NOT NULL COMMENT '数据日期'
+ ) DYNAMIC_PARTITION_POLICY(
+    ENABLE = true,
+    TIME_UNIT = 'month', -- 按月分区, 支持 hour/day/week/month/year
+    PRECREATE_TIME = '1 day', -- 分区预创建时间
+    EXPIRE_TIME = '-1', -- 分区过期时间, -1: 不过期, 0: 除当前分区外之前的所有分区均过期, n hour/day/week/month/year
+    TIME_ZONE = '+8:00', -- 时区信息
+    BIGINT_PRECISION = 'none' -- 时间戳精度
+)
+PARTITION BY RANGE COLUMNS (DATA_DATE)(
+    partition `P0`      values less than ('2025-10-01 00:00:00'), -- 最少创建一个分区
+    partition `P202510` values less than ('2025-11-01 00:00:00'),
+    partition `P202511` values less than ('2025-12-01 00:00:00'),
+    partition `P202512` values less than ('2026-01-01 00:00:00'),
+    partition `P202601` values less than ('2026-02-01 00:00:00'),
+    partition `P202602` values less than ('2026-03-01 00:00:00')
+)
+```
+>[!Abstract] 建表后预创建分区和删除过期分区的动作不会立刻执行，需要等待下一次动态分区管理任务自动调度，或者手动调度一次动态分区管理任务
+>```sql
+>CALL DBMS_PARTITION.MANAGE_DYNAMIC_PARTITION()
+>```
+
+查看分区表分区及数据量信息
+```sql
+SELECT 
+     TABLE_SCHEMA
+    ,TABLE_NAME
+    ,PARTITION_NAME
+    ,TRUNCATE(DATA_LENGTH / 1024 / 1024 / 1024, 2) as '数据容量(GB)'
+    ,TRUNCATE(INDEX_LENGTH / 1024 / 1024 / 1024, 2) as '索引容量(GB)'
+FROM 
+    information_schema.PARTITIONS 
+WHERE 
+    PARTITION_NAME is not null and TABLE_NAME = 'xxx'
+```
+
+查看分区表分布及数据量信息 (sys租户下使用)
+```sql
+SELECT 
+    b.table_name,
+    b.PARTITION_NAME,
+    a.svr_ip,
+    a.svr_port,
+    a.data_size / 1024 / 1024 / 1024 AS data_size_GB
+FROM 
+    CDB_OB_TABLET_REPLICAS a,
+    CDB_OB_TABLE_LOCATIONS b
+WHERE 
+    a.tablet_id = b.tablet_id
+    AND b.table_name = 'xxx'
+```
