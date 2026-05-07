@@ -124,6 +124,8 @@ https://docs.docker.com/install/linux/docker-ce/centos/
    ExecStart=/usr/bin/dockerd
    修改成如下内容：
    ExecStart=/usr/bin/dockerd --graph /opt/docker_dir/docker
+   --graph 新版本已替换为 --data-root
+   ExecStart=/usr/bin/dockerd --data-root /opt/docker_dir/docker
    ```
 
 5. reload配置文件, 重启docker服务
