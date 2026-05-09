@@ -408,3 +408,10 @@ WHERE
     a.tablet_id = b.tablet_id
     AND b.table_name = 'xxx'
 ```
+
+表主键修改
+```sql
+-- 主键调整只能先删除后新增
+ALTER TABLE xxx DROP PRIMARY KEY;
+ALTER TABLE xxx ADD PRIMARY KEY (col1,col2...);
+```
