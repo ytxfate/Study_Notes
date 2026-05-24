@@ -11,8 +11,8 @@
 | calico                  | v3.32.0 |
 
 #### 安装 Docker
-[[install_docker_on_centos7#Install Docker Engine from binaries]]
-
+[install_docker-gitee](https://gitee.com/ytxfate/Study_Notes/blob/master/install_docker_on_centos7.md#install-docker-engine-from-binaries)
+[install_docker-github](https://github.com/ytxfate/Study_Notes/blob/master/install_docker_on_centos7.md#install-docker-engine-from-binaries)
 #### 安装 cri-dockerd
 使用以下命令下载文件, 解压后将 `cri-dockerd` 可执行文件放到 `/usr/bin/` 目录下 
 ```bash
@@ -213,7 +213,36 @@ kubectl apply -f calico.yaml
  ```
  
 #### 常用命令
-#####  节点开启pod调用
+##### 关机
+```bash
+# 标记节点为不可调度 (在master节点执行命令)
+kubectl cordon <你的节点名>
+
+# 驱逐节点服务
+kubectl drain <节点名称> --delete-emptydir-data --force --ignore-daemonsets
+
+# 关闭服务
+sudo systemctl stop kubelet
+
+# 停止控制平面节点所有 k8s 容器
+docker stop $(docker container ls -f "name=^k8s" -q -a)
+
+# 移除控制平面节点所有 k8s 容器 (关机恢复疑似不会使用之前的容器)
+docker rm $(docker container ls -f "name=^k8s" -q -a)
+```
+##### 关机恢复
+```bash
+# 启动服务
+sudo systemctl start kubelet
+
+# 恢复节点调度
+kubectl uncordon <你的节点名>
+```
+##### 移除 k8s 中 Exited 状态的容器
+```bash
+docker rm $(docker container ls -f "name=^k8s" -f "status=exited" -q -a)
+```
+##### 节点开启pod调用
 1. master节点开启pod调用
 ```bash
 kubectl taint nodes --all node-role.kubernetes.io/master-
