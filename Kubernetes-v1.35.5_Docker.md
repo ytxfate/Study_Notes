@@ -391,3 +391,26 @@ EnvironmentFile=-/etc/sysconfig/kubelet
 ExecStart=
 ExecStart=/usr/bin/kubelet $KUBELET_KUBECONFIG_ARGS $KUBELET_CONFIG_ARGS $KUBELET_KUBEADM_ARGS $KUBELET_EXTRA_ARGS
 ```
+
+#### 使用
+##### Headlamp (替代 Kubernetes Dashboard)
+```bash
+# 下载文件
+curl -LO https://raw.github.com/kubernetes-sigs/headlamp/refs/tags/v0.42.0/kubernetes-headlamp.yaml
+
+# 将配置应用于资源
+kubectl apply -f kubernetes-headlamp.yaml
+
+# 创建 service account
+kubectl -n kube-system create serviceaccount headlamp-admin
+
+# 为特定的ClusterRole创建ClusterRoleBinding
+kubectl create clusterrolebinding headlamp-admin --serviceaccount=kube-system:headlamp-admin --clusterrole=cluster-admin
+
+# 查看 service 的 ip 和 端口, 浏览器访问 http://{ip}:80
+kubectl describe service headlamp -n kube-system
+
+# 生成访问 token
+kubectl create token headlamp-admin -n kube-system 
+```
+
