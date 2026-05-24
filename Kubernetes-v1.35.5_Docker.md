@@ -253,7 +253,8 @@ kubectl taint nodes --all node-role.kubernetes.io/control-plane-
 ```
 ##### 节点操作
 1. 添加node节点 (在工作节点操作)
-生成worker节点的join命令
+在主节点生成 worker 节点的 join 命令, 之后在 worker 节点执行 join 命令
+worker 节点只需要安装 `kubeadm` `kubelet` `Docker` `cri-dockerd` 
 ```bash
 kubeadm token create --print-join-command
 
