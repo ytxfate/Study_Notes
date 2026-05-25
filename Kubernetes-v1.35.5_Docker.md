@@ -210,7 +210,7 @@ curl -LO https://raw.githubusercontent.com/projectcalico/calico/v3.32.0/manifest
 使用以下命令添加网络插件
 ```bash
 kubectl apply -f calico.yaml
- ```
+```
  
 #### 常用命令
 ##### 关机
