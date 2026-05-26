@@ -299,6 +299,14 @@ kubectl get services -n xxx
 ```bash
 kubectl delete services xxx -n xxx
 ```
+##### 证书管理
+```bash
+# 检查证书何时过期
+sudo kubeadm certs check-expiration
+
+# 手动更新证书 (如果你运行的集群具有多副本的控制平面，则需要在所有控制平面节点上执行这条命令)
+sudo kubeadm certs renew all
+```
 
 #### 附件
 cri-docker.service
