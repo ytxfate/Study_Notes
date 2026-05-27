@@ -242,12 +242,7 @@ kubectl uncordon <你的节点名>
 ```bash
 docker rm $(docker container ls -f "name=^k8s" -f "status=exited" -q -a)
 ```
-##### 节点开启pod调用
-1. master节点开启pod调用
-```bash
-kubectl taint nodes --all node-role.kubernetes.io/master-
-```
-2. 控制平面节点开启pod调用
+##### 控制平面节点开启pod调用
 ```bash
 kubectl taint nodes --all node-role.kubernetes.io/control-plane-
 ```
