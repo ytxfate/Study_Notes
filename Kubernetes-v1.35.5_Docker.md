@@ -95,7 +95,7 @@ sudo systemctl enable --now kubelet
 ```bash
 kubeadm config print init-defaults > kubeadm-config.yaml
 ```
-本次使用的配置如下, 修改了 `localAPIEndpoint.advertiseAddress` `nodeRegistration.criSocket` `nodeRegistration.name` `networking.serviceSubnet` 项
+本次使用的配置如下, 修改了 `localAPIEndpoint.advertiseAddress` `nodeRegistration.criSocket` `nodeRegistration.name` `networking.serviceSubnet` 项, 添加 `controlPlaneEndpoint` 项
 ```yaml
 apiVersion: kubeadm.k8s.io/v1beta4
 bootstrapTokens:
@@ -145,8 +145,11 @@ networking:
   dnsDomain: cluster.local
   serviceSubnet: 192.222.0.0/16
 proxy: {}
+controlPlaneEndpoint: "192.168.1.22:6443"
 scheduler: {}
 ```
+> [!Warning] 多控制节点集群时 controlPlaneEndpoint 必须设置
+
 使用以下命令查看需要使用到镜像并拉取镜像
 ```bash
 # 查看
@@ -189,7 +192,9 @@ docker tag registry.k8s.io/pause:3.10.1 registry.k8s.io/pause:3.10
 ```
 初始化控制平面
 ```bash
-sudo kubeadm init --config kubeadm-config.yaml
+sudo kubeadm init --config kubeadm-config.yaml --upload-certs
+
+# --upload-certs 上传证书到ETCD
 ```
 执行以下命令可使非 `root` 用户可以运行 `kubectl`
 ```bash
@@ -260,6 +265,24 @@ kubeadm token create --ttl 0 --print-join-command
 ```bash
 kubectl delete node xxx
 ```
+3. 添加控制节点
+```bash
+# 在现有的控制节点上执行以下命令，上传证书到ETCD, 并会生成一个证书密钥, 即后文中的 <certificate-key>
+kubeadm init phase upload-certs --upload-certs
+
+# 在现有的控制节点上执行以下命令，生成加入集群所需的 Token
+kubeadm token create --print-join-command
+
+# 在新加入的控制节点上执行从上一步得到的命令，并加上 --control-plane 和 --certificate-key 参数
+kubeadm join <master-ip>:<port> --token <token> --discovery-token-ca-cert-hash sha256:<hash> --control-plane --certificate-key <certificate-key>
+
+# 查看新加入的节点
+kubectl get node -A
+
+# 重新平衡 CoreDNS Pod (建议执行)
+kubectl -n kube-system rollout restart deployment coredns
+```
+> [!Warning] 添加控制节点集群时注意原集群需要有 controlPlaneEndpoint 配置, 不然会报错 unable to add a new control plane instance to a cluster that doesn't have a stable controlPlaneEndpoint address
 ##### pod
 1. 查看pod
 ```bash
