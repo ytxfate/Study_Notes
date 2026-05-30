@@ -95,7 +95,7 @@ sudo systemctl enable --now kubelet
 ```bash
 kubeadm config print init-defaults > kubeadm-config.yaml
 ```
-本次使用的配置如下, 修改了 `localAPIEndpoint.advertiseAddress` `nodeRegistration.criSocket` `nodeRegistration.name` `networking.serviceSubnet` 项, 添加 `controlPlaneEndpoint` 项
+本次使用的配置如下, 修改了 `localAPIEndpoint.advertiseAddress` `nodeRegistration.criSocket` `nodeRegistration.name` `networking.serviceSubnet` 项, 添加 `controlPlaneEndpoint` `networking.podSubnet` 项
 ```yaml
 apiVersion: kubeadm.k8s.io/v1beta4
 bootstrapTokens:
@@ -143,6 +143,7 @@ kind: ClusterConfiguration
 kubernetesVersion: 1.35.5
 networking:
   dnsDomain: cluster.local
+  podSubnet: 192.221.0.0/16
   serviceSubnet: 192.222.0.0/16
 proxy: {}
 controlPlaneEndpoint: "192.168.1.22:6443"
@@ -207,7 +208,7 @@ sudo kubeadm reset -f && sudo rm -rf /etc/kubernetes /etc/cni/net.d $HOME/.kube/
 
 #### 网络插件
 使用以下命令下载文件
-```
+```bash
 curl -LO https://raw.githubusercontent.com/projectcalico/calico/v3.32.0/manifests/calico.yaml
 ```
 > 建议提前下载calico.yaml中涉及的镜像
@@ -283,40 +284,286 @@ kubectl get node -A
 kubectl -n kube-system rollout restart deployment coredns
 ```
 > [!Warning] 添加控制节点集群时注意原集群需要有 controlPlaneEndpoint 配置, 不然会报错 unable to add a new control plane instance to a cluster that doesn't have a stable controlPlaneEndpoint address
-##### pod
-1. 查看pod
+##### YAML 模板
+基本资源相关的创建都可以在命令末尾添加 `-o yaml --dry-run=client` 来获取模板
 ```bash
-kubectl get pod -A
-```
-2. 查看pod描述(用此命令查看容器事件)
-```bash
-kubectl describe pod xxx -n xxx
+# 命名空间
+kubectl create namespace nginx-ns -o yaml --dry-run=client
+# pod
+kubectl run nginx --image nginx:1.21.4 -n nginx-ns -o yaml --dry-run=client
+# deployment
+kubectl create deployment nginx-deploy --image=nginx:1.21.4 -n nginx-ns -o yaml --dry-run=client
+
+# --dry-run=client：只生成配置，不向集群提交创建请求
 ```
 ##### namespaces
 1. 查看命名空间
 ```bash
+# 查询
 kubectl get namespaces
-查看命名空间详情
+kubectl get ns
+
+# 查看命名空间详情
 kubectl describe namespace nginx
 ```
+2. 创建
+- 命令行
+```bash
+kubectl create namespace xxx
+```
+- YAML
+```yaml
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: nginx-ns
+```
+```bash
+kubectl create -f xxx.yaml
+kubectl apply -f xxx.yaml
+# 区别:
+#	create 仅在没有时创建, 否则报错
+#   apply  没有则创建, 有则更新
+```
+3. 删除
+- 命令行
+```bash
+kubectl delete namespace xxx
+```
+- YAML
+```bash
+kubectl delete -f xxx.yaml
+```
+##### pod
+1. 创建
+- 命令行
+```bash
+kubectl run mynginx --image nginx:1.21.4 -n nginx-ns
+```
+- YAML
+```yaml
+apiVersion: v1
+kind: Pod
+metadata:
+  labels:
+    run: mynginx
+  name: mynginx
+  namespace: nginx-ns
+spec:
+  containers:
+  - name: nginx
+    image: nginx:1.21.4
+    ports:
+    - containerPort: 80
+```
+```bash
+kubectl apply -f xxx.yaml
+```
+2. 查看pod
+```bash
+kubectl get pod -A
+
+# 查看 nginx-ns 命名空间下的 pod
+kubectl get pod -n nginx-ns
+kubectl get pod -n nginx-ns -o wide
+```
+3. 查看pod描述(用此命令查看容器事件)
+```bash
+kubectl describe pod mynginx -n nginx-ns
+```
+4. 删除
+```bash
+kubectl delete pod mynginx -n nginx-ns
+```
+- YAML
+```bash
+kubectl delete -f xxx.yaml
+```
+5. 进入容器
+```bash
+kubectl exec -it mynginx -n nginx-ns -- bash
+
+# pod 下有多个容器需要使用 -c 指定具体的容器
+kubectl exec -it mynginx -n nginx-ns -c nginx -- bash
+```
+6. 查看 pod 日志
+```bash
+kubectl logs nginx-deploy-846447d89f-l97xz -n nginx-ns
+```
 ##### deployment
-1. 查看deployment信息
+1. 创建
+- 命令行
 ```bash
-kubectl get deployment -n xxx
+kubectl create deployment nginx-deploy --image=nginx:1.21.4 -n nginx-ns
+```
+- YAML
+```yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app: nginx-deploy
+  name: nginx-deploy
+  namespace: nginx-ns
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: nginx-deploy
+  template:
+    metadata:
+      labels:
+        app: nginx-deploy
+    spec:
+      containers:
+      - image: nginx:1.21.4
+        name: nginx
+```
+```bash
+kubectl apply -f xxx.yaml
+```
+2. 查看deployment信息
+```bash
+kubectl get deployments -n nginx-ns
 ``` 
-2. 删除deployment
+3. 删除deployment
+- 命令行
 ```bash
-kubectl delete deployment xxx -n xxx
+kubectl delete deployment nginx-deploy -n nginx-ns
+```
+- YAML
+```bash
+kubectl delete -f xxx.yaml
+```
+4. 扩容/缩容
+```bash
+kubectl scale --replicas=5 deployment nginx-deploy -n nginx-ns
+```
+5. 滚动升级
+```bash
+kubectl set image deployment nginx-deploy -n nginx-ns nginx=nginx:1.22
+```
+6. 更新一个资源的注解 (建议 滚动升级 后添加, 方便查看区分滚动更新历史)
+```bash
+kubectl annotate deployment nginx-deploy kubernetes.io/change-cause="update nginx image version" -n nginx-ns
+```
+7. 滚动更新历史
+```bash
+kubectl rollout history deployment nginx-deploy -n nginx-ns
+```
+8. 回滚
+```bash
+# 回滚到上一个版本
+kubectl rollout undo deployment nginx-deploy -n nginx-ns
+
+# 回滚到指定版本 (--to-revision 后的值为 rollout history 查询到的值)
+kubectl rollout undo deployment nginx-deploy -n nginx-ns --to-revision=1
 ```
 ##### services
-1. 查看services信息
+- ClusterIP (默认)
+通过集群的内部 IP 公开 Service, 选择该值时 Service 只能够在集群内部访问
+- NodePort
+通过每个节点上的 IP 和静态端口（NodePort）公开 Service
+- LoadBalancer
+使用云平台的负载均衡器向外部公开 Service (Kubernetes 不直接提供负载均衡组件)
+- ExternalName
+将服务映射到 externalName 字段的内容（例如，映射到主机名 api.foo.bar.example）。 该映射将集群的 DNS 服务器配置为返回具有该外部主机名值的 CNAME 记录。 集群不会为之创建任何类型代理。
+
+1. 创建
+- 命令行
 ```bash
-kubectl get services -n xxx
+kubectl expose deployment nginx-deploy -n nginx-ns --name nginx-service --port 80 --type=NodePort
 ```
-2. 删除services
+- YAML
+```yaml
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    app: nginx-deploy
+  name: nginx-service
+  namespace: nginx-ns
+spec:
+  ports:
+  - port: 80
+    protocol: TCP
+    targetPort: 80
+  selector:
+    app: nginx-deploy
+  type: NodePort
+```
 ```bash
-kubectl delete services xxx -n xxx
+kubectl apply -f xxx.yaml
 ```
+2. 查询
+```bash
+kubectl get service -n nginx-ns
+```
+3. 删除
+```bash
+kubectl delete service nginx-service -n nginx-ns
+```
+4. 查看 service 详情
+```bash
+kubectl describe service nginx-service -n nginx-ns
+```
+##### volumes
+nginx 挂在本地目录
+```yaml
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: nginx-ns
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app: nginx-deploy
+  name: nginx-deploy
+  namespace: nginx-ns
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: nginx-deploy
+  template:
+    metadata:
+      labels:
+        app: nginx-deploy
+    spec:
+      containers:
+      - image: nginx:1.21.4
+        ports:
+        - containerPort: 80
+        name: nginx
+        volumeMounts:
+        - name: html
+          mountPath: /usr/share/nginx/html
+      volumes:
+      - name: html
+        hostPath:
+          path: /opt/web    # 目录自行创建
+          type: Directory
+---
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    app: nginx-deploy
+  name: nginx-service
+  namespace: nginx-ns
+spec:
+  ports:
+  - port: 80
+    protocol: TCP
+    targetPort: 80
+    nodePort: 31000
+  selector:
+    app: nginx-deploy
+  type: NodePort
+```
+其他类型挂载参考官方文档 [volumes](https://v1-35.docs.kubernetes.io/zh-cn/docs/concepts/storage/volumes/) 或最新版本的文档 [volumes](https://kubernetes.io/zh-cn/docs/concepts/storage/volumes/) 
 ##### 证书管理
 ```bash
 # 检查证书何时过期
