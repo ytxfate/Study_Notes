@@ -928,6 +928,93 @@ spec:
           readOnly: true
           mountPath: "/etc/secret-volume"
 ```
+##### gateway
+安装 gateway-api
+```bash
+kubectl apply --server-side -f https://github.com/kubernetes-sigs/gateway-api/releases/download/v1.5.0/standard-install.yaml
+
+# 查看
+kubectl api-resources | grep gateway.networking.k8s.io
+```
+安装 nginx-gateway-fabric crds
+```bash
+kubectl apply --server-side -f https://raw.githubusercontent.com/nginx/nginx-gateway-fabric/v2.6.3/deploy/crds.yaml
+```
+使用 helm 安装 nginx-gateway-fabric
+```bash
+helm pull oci://ghcr.io/nginx/charts/nginx-gateway-fabric:2.6.3 --untar
+
+cd nginx-gateway-fabric
+
+helm install ngf . --create-namespace -n nginx-gateway --set nginx.service.type=LoadBalancer --set nginx.service.externalTrafficPolicy=Cluster --set nginxGateway.snippetsFilters.enable=true
+
+kubectl get all -n nginx-gateway
+kubectl get gatewayclass
+```
+创建一个测试服务
+```bash
+kubectl create namespace nginx-ns
+kubectl create deployment nginx-deploy --image=nginx:1.21.4 -n nginx-ns --replicas=3
+kubectl expose deployment nginx-deploy -n nginx-ns --name nginx-service --port 80
+```
+创建 Gateway
+```bash
+kubectl apply -f - <<EOF
+apiVersion: gateway.networking.k8s.io/v1
+kind: Gateway
+metadata:
+  name: nginx-gw
+  namespace: nginx-ns
+spec:
+  gatewayClassName: nginx
+  listeners:
+  - name: http
+    port: 80
+    protocol: HTTP
+EOF
+
+kubectl get all -n nginx-ns
+kubectl get nginxproxy -n nginx-gateway
+kubectl describe nginxproxy ngf-proxy-config -n nginx-gateway
+```
+创建 HTTPRoute
+```bash
+kubectl apply -f - <<EOF
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  name: nginx-httproute
+  namespace: nginx-ns
+spec:
+  parentRefs:
+  - name: nginx-gw
+  hostnames:
+  - nginx.example.com
+  rules:
+  - matches:
+    - path:
+        type: PathPrefix
+        value: /
+      method: GET
+    backendRefs:
+    - name: nginx-service
+      kind: Service
+      port: 80
+EOF
+
+# nginx.example.com 绑定 service/nginx-gw-nginx EXTERNAL-IP
+# service/nginx-gw-nginx EXTERNAL-IP 显示为 <pending> 或为空因为 Kubernetes 集群环境中缺少能够自动分配公网 IP 的负载均衡器（LoadBalancer）支持
+
+kubectl get httproute -n nginx-ns
+```
+卸载
+```bash
+helm uninstall ngf -n nginx-gateway
+
+kubectl delete ns nginx-gateway
+
+kubectl delete -f https://raw.githubusercontent.com/nginx/nginx-gateway-fabric/v2.6.3/deploy/crds.yaml
+```
 ##### 证书管理
 ```bash
 # 检查证书何时过期
