@@ -508,7 +508,7 @@ kubectl delete service nginx-service -n nginx-ns
 kubectl describe service nginx-service -n nginx-ns
 ```
 ##### volumes
-nginx 挂在本地目录
+1. nginx 挂载本地目录
 ```yaml
 apiVersion: v1
 kind: Namespace
@@ -563,7 +563,371 @@ spec:
     app: nginx-deploy
   type: NodePort
 ```
+2. nginx 挂载nfs目录
+```yaml
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: nginx-ns
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app: nginx-deploy
+  name: nginx-deploy
+  namespace: nginx-ns
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: nginx-deploy
+  template:
+    metadata:
+      labels:
+        app: nginx-deploy
+    spec:
+      containers:
+      - image: nginx:1.21.4
+        ports:
+        - containerPort: 80
+        name: nginx
+        volumeMounts:
+        - name: html
+          mountPath: /usr/share/nginx/html
+      volumes:
+      - name: html
+        nfs:
+          server: 192.168.1.22  # nfs 服务自行搭建
+          path: /opt/web        # 目录自行创建
+          type: Directory
+---
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    app: nginx-deploy
+  name: nginx-service
+  namespace: nginx-ns
+spec:
+  ports:
+  - port: 80
+    protocol: TCP
+    targetPort: 80
+    nodePort: 31000
+  selector:
+    app: nginx-deploy
+  type: NodePort
+```
 其他类型挂载参考官方文档 [volumes](https://v1-35.docs.kubernetes.io/zh-cn/docs/concepts/storage/volumes/) 或最新版本的文档 [volumes](https://kubernetes.io/zh-cn/docs/concepts/storage/volumes/) 
+###### pv
+1. 创建
+- hostPath
+```yaml
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: pv01-10m
+spec:
+  capacity:
+    storage: 10M
+  accessModes:
+    - ReadWriteMany
+  persistentVolumeReclaimPolicy: Retain     # 手动回收 (默认)
+  hostPath:
+    path: /opt/web/01    # 目录自行创建
+---
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: pv02-1gi
+spec:
+  capacity:
+    storage: 1Gi
+  accessModes:
+    - ReadWriteMany
+  persistentVolumeReclaimPolicy: Recycle     # 简单擦除（rm -rf /thevolume/*）已经废弃
+  hostPath:
+    path: /opt/web/02    # 目录自行创建
+---
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: pv03-3gi
+spec:
+  capacity:
+    storage: 3Gi
+  accessModes:
+    - ReadWriteMany
+  persistentVolumeReclaimPolicy: Delete     # 删除存储卷
+  hostPath:
+    path: /opt/web/03    # 目录自行创建
+```
+- nfs
+```yaml
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: pv01-10m
+spec:
+  capacity:
+    storage: 10M
+  accessModes:
+    - ReadWriteMany
+  storageClassName: nfs
+  nfs:
+    server: 192.168.1.22
+    path: /opt/web/01    # 目录自行创建
+---
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: pv02-1gi
+spec:
+  capacity:
+    storage: 1Gi
+  accessModes:
+    - ReadWriteMany
+  storageClassName: nfs
+  nfs:
+    server: 192.168.1.22
+    path: /opt/web/02    # 目录自行创建
+---
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: pv03-3gi
+spec:
+  capacity:
+    storage: 3Gi
+  accessModes:
+    - ReadWriteMany
+  storageClassName: nfs
+  nfs:
+    server: 192.168.1.22
+    path: /opt/web/03    # 目录自行创建
+```
+
+```bash
+kubectl apply -f xxx.yaml
+```
+2. 查询
+```bash
+kubectl get pv
+```
+3. 查看详情
+```bash
+kubectl describe pv pv01-10m
+```
+4. 删除
+```bash
+kubectl delete pv pv01-10m
+```
+###### pvc
+1. 创建
+```yaml
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: nginx-pvc
+  namespace: nginx-ns
+spec:
+  accessModes:
+    - ReadWriteMany
+  storageClassName: "" # 此处须显式设置空字符串，否则会被设置为默认的 StorageClass
+  resources:
+    requests:
+      storage: 200Mi
+```
+
+```bash
+kubectl apply -f xxx.yaml
+```
+2. 查询
+```bash
+kubectl get pvc -n nginx-ns
+```
+3. 查看详情
+```bash
+kubectl describe pvc nginx-pvc -n nginx-ns
+```
+4. 挂载
+```yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app: nginx-deploy
+  name: nginx-deploy
+  namespace: nginx-ns
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: nginx-deploy
+  template:
+    metadata:
+      labels:
+        app: nginx-deploy
+    spec:
+      containers:
+      - image: nginx:1.21.4
+        ports:
+        - containerPort: 80
+        name: nginx
+        volumeMounts:
+        - name: html
+          mountPath: /usr/share/nginx/html
+      volumes:
+      - name: html
+        persistentVolumeClaim:
+          claimName: nginx-pvc
+```
+5. 删除
+```bash
+kubectl delete pvc nginx-pvc -n nginx-ns
+```
+##### ConfigMap
+```yaml
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: busybox-ns
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: busybox-cm
+  namespace: busybox-ns
+data:
+  # 类属性键；每一个键都映射到一个简单的值
+  player_initial_lives: "3"
+  ui_properties_file_name: "user-interface.properties"
+
+  # 类文件键
+  game.properties: |
+    enemy.types=aliens,monsters
+    player.maximum-lives=5
+  user-interface.properties: |
+    color.good=purple
+    color.bad=yellow
+    allow.textmode=true
+---
+apiVersion: v1
+kind: Pod
+metadata:
+  name: busybox-env-configmap
+  namespace: busybox-ns
+spec:
+  containers:
+    - name: busybox-env
+      command: ["/bin/sh", "-c", "printenv"]
+      image: busybox:latest
+      envFrom:
+        - configMapRef:  # data 里的内容全部设置到环境变量里
+            name: busybox-cm
+---
+apiVersion: v1
+kind: Pod
+metadata:
+  name: busybox-env-part-configmap
+  namespace: busybox-ns
+spec:
+  containers:
+    - name: busybox-env-part
+      command: ["/bin/sh", "-c", "printenv"]
+      image: busybox:latest
+      env:
+        # 定义环境变量
+        - name: PLAYER_INITIAL_LIVES # 请注意这里和 ConfigMap 中的键名是不一样的
+          valueFrom:
+            configMapKeyRef:
+              name: busybox-cm           # 这个值来自 ConfigMap
+              key: player_initial_lives  # 需要取值的键
+        - name: UI_PROPERTIES_FILE_NAME
+          valueFrom:
+            configMapKeyRef:
+              name: busybox-cm
+              key: ui_properties_file_name
+---
+apiVersion: v1
+kind: Pod
+metadata:
+  name: busybox-file-configmap
+  namespace: busybox-ns
+spec:
+  containers:
+    - name: busybox-file
+      command: ["/bin/sh", "-c", "ls -al /etc/foo && cat /etc/foo/game.properties"]
+      image: busybox:latest
+      volumeMounts:
+      - name: foo
+        mountPath: "/etc/foo"
+        readOnly: true
+  volumes:
+  - name: foo
+    configMap:     # data 里的内容全部写入到各自key文件里
+      name: busybox-cm
+---
+apiVersion: v1
+kind: Pod
+metadata:
+  name: busybox-file-part-configmap
+  namespace: busybox-ns
+spec:
+  containers:
+    - name: busybox-file-part
+      command: ["/bin/sh", "-c", "ls -al /etc/foo && cat /etc/foo/game.properties"]
+      image: busybox:latest
+      volumeMounts:
+      - name: foo
+        mountPath: "/etc/foo"
+        readOnly: true
+  volumes:
+  - name: foo
+    configMap:
+      name: busybox-cm
+      # 来自 ConfigMap 的一组键，将被创建为文件
+      items:
+      - key: "game.properties"
+        path: "game.properties"
+      - key: "user-interface.properties"
+        path: "user-interface.properties"
+```
+##### Secret
+```yaml
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: busybox-ns
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: dotfile-secret
+  namespace: busybox-ns
+data:
+  .secret-file: dmFsdWUtMg0KDQo=
+---
+apiVersion: v1
+kind: Pod
+metadata:
+  name: secret-dotfiles-pod
+  namespace: busybox-ns
+spec:
+  volumes:
+    - name: secret-volume
+      secret:
+        secretName: dotfile-secret
+  containers:
+    - name: dotfile-test-container
+      image: busybox:latest
+      command: ["sh", "-c", "ls -al /etc/secret-volume && cat /etc/secret-volume/.secret-file"]
+      volumeMounts:
+        - name: secret-volume
+          readOnly: true
+          mountPath: "/etc/secret-volume"
+```
 ##### 证书管理
 ```bash
 # 检查证书何时过期
