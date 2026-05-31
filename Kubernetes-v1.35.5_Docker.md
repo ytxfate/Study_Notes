@@ -1003,7 +1003,7 @@ spec:
 EOF
 
 # nginx.example.com 绑定 service/nginx-gw-nginx EXTERNAL-IP
-# service/nginx-gw-nginx EXTERNAL-IP 显示为 <pending> 或为空因为 Kubernetes 集群环境中缺少能够自动分配公网 IP 的负载均衡器（LoadBalancer）支持
+# service/nginx-gw-nginx EXTERNAL-IP 显示为 <pending> 或为空因为 Kubernetes 集群环境中缺少能够自动分配公网 IP 的负载均衡器（LoadBalancer）支持, 参考后文 metallb 部分
 
 kubectl get httproute -n nginx-ns
 ```
@@ -1014,6 +1014,30 @@ helm uninstall ngf -n nginx-gateway
 kubectl delete ns nginx-gateway
 
 kubectl delete -f https://raw.githubusercontent.com/nginx/nginx-gateway-fabric/v2.6.3/deploy/crds.yaml
+```
+##### metallb 负载均衡器‌
+部署
+```bash
+kubectl apply -f https://raw.githubusercontent.com/metallb/metallb/v0.16.1/config/manifests/metallb-frr-k8s.yaml
+```
+配置IP地址池(Layer2模式)
+```bash
+kubectl apply -f - <<EOF
+apiVersion: metallb.io/v1beta1
+kind: IPAddressPool
+metadata:
+  name: default
+  namespace: metallb-system
+spec:
+  addresses:  # 预留IP段/范围
+  - 192.168.1.240-192.168.1.250
+---
+apiVersion: metallb.io/v1beta1
+kind: L2Advertisement
+metadata:
+  name: default
+  namespace: metallb-system
+EOF
 ```
 ##### 证书管理
 ```bash
