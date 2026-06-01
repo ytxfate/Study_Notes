@@ -90,7 +90,7 @@ sudo systemctl daemon-reload
 sudo systemctl enable --now kubelet
 ```
 
-#### # kubeadm 创建集群
+#### kubeadm 创建集群
 使用一下命令生成配置文件
 ```bash
 kubeadm config print init-defaults > kubeadm-config.yaml
