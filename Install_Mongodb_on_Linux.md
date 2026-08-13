@@ -21,6 +21,7 @@ systemLog:
   destination: file
   path: "/opt/mongodb-4.0.5/log/mongodb.log"
   logAppend: true
+  # logRotate: reopen   # 配合 logrotate 使用
 
 # 数据存放路径
 storage:
@@ -184,17 +185,18 @@ mongotop -h 127.0.0.1 --port 27017 --authenticationDatabase=admin -u root -p roo
 ```
 
 ##### 15 logrotate 日志分割
+将以下案例放到 `/etc/logrotate.d/` 目录下, 自定义文件名称, 例如: `/etc/logrotate.d/mongodb`
+> [!warning] 以下 logrotate 配置文件案例需要配合 `mongodb.conf` 中的 `logRotate: reopen` 一起使用
 ```
 /opt/mongodb-4.0.5/log/*.log {     # 需要进行日志切割的日志文件的位置
     # 条件：大于这个条件时会进行切割
     size 200M
     daily                    # 执行周期：daily，weekly，monthly，yearly
-    missingok
     # 保留多少个，超过这个数时，最久的日志文件将会被删除
     rotate 5
-    copytruncate             # 把正在输出的日志拷贝一份出来，然后清空源文件
     dateext                  # 轮询的日志以日期结尾
-    notifempty               # 忽略空文件
+    dateformat -%Y%m%d%H%M%S
+    # notifempty               # 忽略空文件
     missingok                # 如果文件不存在则忽略
     postrotate               # 脚本开始标志
         /bin/kill -SIGUSR1 `cat /opt/mongodb-4.0.5/mongod.pid 2>/dev/null` > /dev/null 2>&1
@@ -204,6 +206,10 @@ mongotop -h 127.0.0.1 --port 27017 --authenticationDatabase=admin -u root -p roo
     # 使用指定模式创建日志文件
     create 640 mongodb mongodb
 }
+```
+配置完成使用以下命令进行测试验证:
+```bash
+logrotate -f /etc/logrotate.d/mongodb
 ```
 
 ##### 16 mongodb.service
