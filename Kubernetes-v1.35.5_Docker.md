@@ -1163,3 +1163,214 @@ kubectl describe service headlamp -n kube-system
 kubectl create token headlamp-admin -n kube-system 
 ```
 
+##### Gateway + metallb 场景使用
+0. 创建两个 `namespace` 及 `deployment`
+```bash
+kubectl create namespace nginx-ns
+kubectl create namespace nginx-ns2
+
+kubectl create deployment nginx-deploy --image=nginx:1.21.4 -n nginx-ns --replicas=3
+kubectl create deployment nginx-deploy --image=nginx:1.21.4 -n nginx-ns2 --replicas=2
+```
+1. 创建两个单ip的ip池(单ip方便对外提供服务), 并使用 `serviceAllocation` 指定固定的命名空间可使用
+```bash
+kubectl apply -f - <<EOF
+apiVersion: metallb.io/v1beta1
+kind: IPAddressPool
+metadata:
+  name: nginx-ns-single-ip-pool
+  namespace: metallb-system
+spec:
+  addresses:  # 预留IP段/范围
+  - 192.168.1.240/32
+  # 关键：限制只有特定命名空间或Service能使用此池
+  serviceAllocation:
+    namespaces:
+      - nginx-ns  # 替换为你的Gateway所在命名空间
+---
+apiVersion: metallb.io/v1beta1
+kind: L2Advertisement
+metadata:
+  name: nginx-ns-l2adv
+  namespace: metallb-system
+spec:
+  ipAddressPools:
+  - nginx-ns-single-ip-pool
+---
+apiVersion: metallb.io/v1beta1
+kind: IPAddressPool
+metadata:
+  name: nginx-ns2-single-ip-pool
+  namespace: metallb-system
+spec:
+  addresses:  # 预留IP段/范围
+  - 192.168.1.241/32
+  # 关键：限制只有特定命名空间或Service能使用此池
+  serviceAllocation:
+    namespaces:
+      - nginx-ns2  # 替换为你的Gateway所在命名空间
+---
+apiVersion: metallb.io/v1beta1
+kind: L2Advertisement
+metadata:
+  name: nginx-ns2-l2adv
+  namespace: metallb-system
+spec:
+  ipAddressPools:
+  - nginx-ns2-single-ip-pool
+EOF
+```
+2. 创建 `Gateway` 及 `httproute` , 以下示例在两个命名空间下分别创建了一个监听两个端口的 `Gateway`, 并且分别各创建两个 `HTTPRoute` 匹配 `Gateway` 的两个端口
+```bash
+kubectl apply -f - <<EOF
+apiVersion: gateway.networking.k8s.io/v1
+kind: Gateway
+metadata:
+  name: nginx-gw
+  namespace: nginx-ns
+spec:
+  gatewayClassName: nginx
+  addresses:
+    - type: IPAddress
+      value: 192.168.1.240  # 指定你池中的固定IP
+  listeners:
+  - name: http-80
+    port: 80
+    protocol: HTTP
+  - name: http-8080
+    port: 8080
+    protocol: HTTP
+---
+apiVersion: gateway.networking.k8s.io/v1
+kind: Gateway
+metadata:
+  name: nginx-gw
+  namespace: nginx-ns2
+spec:
+  gatewayClassName: nginx
+  addresses:
+    - type: IPAddress
+      value: 192.168.1.241  # 指定你池中的固定IP
+  listeners:
+  - name: http-80
+    port: 80
+    protocol: HTTP
+  - name: http-8080
+    port: 8080
+    protocol: HTTP
+---
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  name: nginx-httproute-80
+  namespace: nginx-ns
+spec:
+  parentRefs:
+  - name: nginx-gw
+    sectionName: http-80
+  rules:
+  - matches:
+    - path:
+        type: PathPrefix
+        value: /1/
+      method: GET
+    backendRefs:
+    - name: nginx-service
+      kind: Service
+      port: 80
+---
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  name: nginx-httproute-8080
+  namespace: nginx-ns
+spec:
+  parentRefs:
+  - name: nginx-gw
+    sectionName: http-8080
+  rules:
+  - matches:
+    - path:
+        type: PathPrefix
+        value: /1/
+      method: GET
+    backendRefs:
+    - name: nginx-service
+      kind: Service
+      port: 80
+---
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  name: nginx-httproute-80
+  namespace: nginx-ns2
+spec:
+  parentRefs:
+  - name: nginx-gw
+    sectionName: http-80
+  rules:
+  - matches:
+    - path:
+        type: PathPrefix
+        value: /2/
+      method: GET
+    backendRefs:
+    - name: nginx-service
+      kind: Service
+      port: 80
+---
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  name: nginx-httproute-8080
+  namespace: nginx-ns2
+spec:
+  parentRefs:
+  - name: nginx-gw
+    sectionName: http-8080
+  rules:
+  - matches:
+    - path:
+        type: PathPrefix
+        value: /2/
+      method: GET
+    backendRefs:
+    - name: nginx-service
+      kind: Service
+      port: 80
+EOF
+```
+3. 使用以下命令查看创建结果
+```bash
+kubectl get ipaddresspool,l2advertisement,gateway,httproute -A
+```
+输出以下内容:
+```bash
+NAMESPACE        NAME                                                AUTO ASSIGN   AVOID BUGGY IPS   ADDRESSES
+metallb-system   ipaddresspool.metallb.io/nginx-ns-single-ip-pool    true          false             ["192.168.1.240/32"]
+metallb-system   ipaddresspool.metallb.io/nginx-ns2-single-ip-pool   true          false             ["192.168.1.241/32"]
+
+NAMESPACE        NAME                                         IPADDRESSPOOLS                 IPADDRESSPOOL SELECTORS   INTERFACES
+metallb-system   l2advertisement.metallb.io/nginx-ns-l2adv    ["nginx-ns-single-ip-pool"]
+metallb-system   l2advertisement.metallb.io/nginx-ns2-l2adv   ["nginx-ns2-single-ip-pool"]
+
+NAMESPACE   NAME                                         CLASS   ADDRESS         PROGRAMMED   AGE
+nginx-ns    gateway.gateway.networking.k8s.io/nginx-gw   nginx   192.168.1.240   True         42s
+nginx-ns2   gateway.gateway.networking.k8s.io/nginx-gw   nginx   192.168.1.241   True         42s
+
+NAMESPACE   NAME                                                       HOSTNAMES   AGE
+nginx-ns    httproute.gateway.networking.k8s.io/nginx-httproute-80                 42s
+nginx-ns    httproute.gateway.networking.k8s.io/nginx-httproute-8080               42s
+nginx-ns2   httproute.gateway.networking.k8s.io/nginx-httproute-80                 42s
+nginx-ns2   httproute.gateway.networking.k8s.io/nginx-httproute-8080               42s
+```
+4. 访问
+```bash
+# 访问 nginx-ns 下的服务
+curl http://192.168.1.240:80/1/
+curl http://192.168.1.240:8080/1/
+
+# 访问 nginx-ns2 下的服务
+curl http://192.168.1.241:80/2/
+curl http://192.168.1.241:8080/2/
+```
