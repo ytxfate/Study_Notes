@@ -1164,13 +1164,16 @@ kubectl create token headlamp-admin -n kube-system
 ```
 
 ##### Gateway + metallb 场景使用
-0. 创建两个 `namespace` 及 `deployment`
+0. 创建两个 `namespace` \ `deployment` \ `service`
 ```bash
 kubectl create namespace nginx-ns
 kubectl create namespace nginx-ns2
 
 kubectl create deployment nginx-deploy --image=nginx:1.21.4 -n nginx-ns --replicas=3
 kubectl create deployment nginx-deploy --image=nginx:1.21.4 -n nginx-ns2 --replicas=2
+
+kubectl expose deployment nginx-deploy -n nginx-ns --name nginx-service --port 80
+kubectl expose deployment nginx-deploy -n nginx-ns2 --name nginx-service --port 80
 ```
 1. 创建两个单ip的ip池(单ip方便对外提供服务), 并使用 `serviceAllocation` 指定固定的命名空间可使用
 ```bash
