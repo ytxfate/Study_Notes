@@ -1141,7 +1141,7 @@ ExecStart=
 ExecStart=/usr/bin/kubelet $KUBELET_KUBECONFIG_ARGS $KUBELET_CONFIG_ARGS $KUBELET_KUBEADM_ARGS $KUBELET_EXTRA_ARGS
 ```
 
-#### 使用
+#### 使用示例
 ##### Headlamp (替代 Kubernetes Dashboard)
 ```bash
 # 下载文件
@@ -1163,7 +1163,7 @@ kubectl describe service headlamp -n kube-system
 kubectl create token headlamp-admin -n kube-system 
 ```
 
-##### Gateway + metallb 场景使用
+##### Nginx Gateway Fabric + metallb 场景使用
 0. 创建两个 `namespace` \ `deployment` \ `service`
 ```bash
 kubectl create namespace nginx-ns
@@ -1377,3 +1377,125 @@ curl http://192.168.1.240:8080/1/
 curl http://192.168.1.241:80/2/
 curl http://192.168.1.241:8080/2/
 ```
+
+##### Envoy Gateway + metallb 场景使用
+1. 安装 gateway-api
+```bash
+kubectl apply --server-side -f https://github.com/kubernetes-sigs/gateway-api/releases/download/v1.5.0/standard-install.yaml
+
+# 查看
+kubectl api-resources | grep gateway.networking.k8s.io
+```
+2. 安装 EnvoyProxy crds
+```bash
+kubectl apply --server-side -f https://raw.githubusercontent.com/envoyproxy/gateway/v1.8.5/charts/gateway-helm/charts/crds/crds/generated/gateway.envoyproxy.io_envoyproxies.yaml
+```
+3. Helm 下载 Envoy Gateway
+```bash
+helm pull oci://docker.io/envoyproxy/gateway-helm --version v1.8.5
+或从 m.daocloud.io 拉取
+helm pull oci://m.daocloud.io/docker.io/envoyproxy/gateway-helm --version v1.8.5
+```
+4. Helm 安装 Envoy Gateway
+```bash
+helm install eg ./gateway-helm-v1.8.5.tgz -n envoy-gateway-system --create-namespace --set crds.enabled=false
+
+注:
+--set crds.enabled=false: 上一步已经单独安装 EnvoyProxy crds, 本步骤跳过
+```
+注: 官方文档可使用以下两行命令安装 EnvoyProxy crds 和 Envoy Gateway, 本次测试未知原因未成功
+```bash
+helm template eg oci://docker.io/envoyproxy/gateway-crds-helm \
+  --version v1.8.5 \
+  --set crds.gatewayAPI.enabled=false \
+  --set crds.envoyGateway.enabled=true \
+  | kubectl apply --server-side -f -
+
+helm install eg oci://docker.io/envoyproxy/gateway-helm \
+  --version v1.8.5 \
+  -n envoy-gateway-system \
+  --create-namespace \
+  --set crds.enabled=false
+```
+5. 创建单 ip 的 ip池
+```yaml
+apiVersion: metallb.io/v1beta1
+kind: IPAddressPool
+metadata:
+  name: nginx-ns-single-ip-pool
+  namespace: metallb-system
+spec:
+  addresses:  # 预留IP段/范围
+  - 192.168.1.240/32
+  # 关键：限制只有特定命名空间或Service能使用此池
+  serviceAllocation:
+    namespaces:
+      - nginx-ns  # 替换为你的Gateway所在命名空间
+---
+apiVersion: metallb.io/v1beta1
+kind: L2Advertisement
+metadata:
+  name: nginx-ns-l2adv
+  namespace: metallb-system
+spec:
+  ipAddressPools:
+  - nginx-ns-single-ip-pool
+```
+6. 创建 EnvoyProxy 及 GatewayClass
+```yaml
+apiVersion: gateway.envoyproxy.io/v1alpha1
+kind: EnvoyProxy
+metadata:
+  name: custom-proxy-config
+  namespace: envoy-gateway-system
+spec:
+  mergeGateways: true  # 关键配置：启用合并模式
+---
+apiVersion: gateway.networking.k8s.io/v1
+kind: GatewayClass
+metadata:
+  name: eg
+spec:
+  controllerName: gateway.envoyproxy.io/gatewayclass-controller
+  # 引用 EnvoyProxy 资源，用于定制数据面（Deployment/Service 等）
+  parametersRef:
+    group: gateway.envoyproxy.io
+    kind: EnvoyProxy
+    name: custom-proxy-config
+    namespace: envoy-gateway-system
+```
+7. 创建 Gateway
+```yaml
+apiVersion: gateway.networking.k8s.io/v1
+kind: Gateway
+metadata:
+  name: nginx-gw
+  namespace: nginx-ns
+spec:
+  gatewayClassName: eg
+  addresses:
+    - type: IPAddress
+      value: 192.168.1.240  # 指定你池中的固定IP
+  listeners:
+  - name: http-80
+    port: 80
+    protocol: HTTP
+---
+apiVersion: gateway.networking.k8s.io/v1
+kind: Gateway
+metadata:
+  name: nginx-envoygateway
+  namespace: nginx-ns
+spec:
+  gatewayClassName: eg
+  addresses:
+    - type: IPAddress
+      value: 192.168.1.240  # 指定你池中的固定IP
+  listeners:
+  - name: http-8080
+    port: 8080
+    protocol: HTTP
+```
+> [!Warning] 注: 两个 gateway 绑定了同一个 IPAddress , 在 EnvoyProxy 的 mergeGateways: true 下会被合并(可减少 gateway pod 数量); 可实现单 ip 多个 gateway 多端口控制访问
+
+8. 创建 HTTPRoute 及后续流程 同 [[#Nginx Gateway Fabric + metallb 场景使用]] 使用示例
