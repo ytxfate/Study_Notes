@@ -507,6 +507,21 @@ kubectl delete service nginx-service -n nginx-ns
 ```bash
 kubectl describe service nginx-service -n nginx-ns
 ```
+
+> [!Warning] 当部署多副本的长链接服务时需要使用 ip_hash 提供会话保持
+```yaml
+apiVersion: gateway.nginx.org/v1alpha1
+kind: UpstreamSettingsPolicy
+metadata:
+  name: socketio-ip-hash
+  namespace: nginx-ns          # 必须与目标 Service 在同一命名空间
+spec:
+  targetRefs:
+    - group: core
+      kind: Service
+      name: nginx-service  # 替换为你的 Socket.IO Service 名称
+  loadBalancingMethod: "ip_hash"
+```
 ##### volumes
 1. nginx 挂载本地目录
 ```yaml
@@ -1039,6 +1054,15 @@ metadata:
   namespace: metallb-system
 EOF
 ```
+
+> [!Warning] Kubernetes 默认会给节点打上 `node.kubernetes.io/exclude-from-external-load-balancers` 标签，MetalLB 会尊重这个标签，拒绝从带此标签的节点宣告服务 IP。导致局域网内其他 ip 无法访问IPAddressPool 内的 ip
+```bash
+# 检查
+kubectl get nodes --show-labels | grep exclude-from-external-load-balancers
+# 移除
+kubectl label nodes <节点名> node.kubernetes.io/exclude-from-external-load-balancers-
+```
+
 ##### 证书管理
 ```bash
 # 检查证书何时过期
