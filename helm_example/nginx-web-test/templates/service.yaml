@@ -1,0 +1,29 @@
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    app: {{ include "mychart.service" . }}
+  name: {{ include "mychart.service" . }}
+  namespace: {{ include "mychart.namespace" . }}
+spec:
+  ports:
+  - port: {{ .Values.service.port }}
+    protocol: TCP
+    targetPort: {{ .Values.service.targetPort }}
+  selector:
+    app: {{ include "mychart.deploy" . }}
+  type: ClusterIP
+status:
+  loadBalancer: {}
+---
+apiVersion: gateway.nginx.org/v1alpha1
+kind: UpstreamSettingsPolicy
+metadata:
+  name: socketio-ip-hash
+  namespace: {{ include "mychart.namespace" . }}          # 必须与目标 Service 在同一命名空间
+spec:
+  targetRefs:
+    - group: core
+      kind: Service
+      name: {{ include "mychart.service" . }}  # 替换为你的 Socket.IO Service 名称
+  loadBalancingMethod: "ip_hash"

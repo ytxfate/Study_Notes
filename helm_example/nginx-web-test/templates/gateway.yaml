@@ -1,0 +1,16 @@
+apiVersion: gateway.networking.k8s.io/v1
+kind: Gateway
+metadata:
+  name: {{ include "mychart.gateway" . }}
+  namespace: {{ include "mychart.namespace" . }}
+spec:
+  gatewayClassName: {{ .Values.gateway.gatewayClassName }}
+  addresses:
+    {{- with .Values.gateway.addresses }}
+      {{- toYaml . | nindent 4 }}
+    {{- end }}
+  listeners:
+    {{- with .Values.gateway.listeners }}
+      {{- toYaml . | nindent 4 }}
+    {{- end }}
+

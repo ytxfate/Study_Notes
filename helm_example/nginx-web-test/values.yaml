@@ -1,0 +1,26 @@
+namespace: "nginx-ns"
+
+service:
+  port: 80
+  targetPort: 80
+
+gateway:
+  gatewayClassName: nginx
+  addresses:
+    - type: IPAddress
+      value: 192.168.1.240  # 指定你池中的固定IP
+  listeners:
+    - name: http-80
+      port: 80
+      protocol: HTTP
+
+httpRoute:
+  rules:
+  - matches:
+    - path:
+        type: PathPrefix
+        value: /api/
+  - matches:
+    - path:
+        type: PathPrefix
+        value: /socket.io/

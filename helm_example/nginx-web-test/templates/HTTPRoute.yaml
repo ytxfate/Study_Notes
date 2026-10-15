@@ -1,0 +1,20 @@
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  name: socketio-route
+  namespace: {{ include "mychart.namespace" . }}
+spec:
+  parentRefs:
+  - name: {{ include "mychart.gateway" . }}
+    sectionName: {{ (index .Values.gateway.listeners 0).name }}
+  rules:
+    {{- range .Values.httpRoute.rules }}
+    {{- with .matches }}
+    - matches:
+      {{- toYaml . | nindent 8 }}
+    {{- end }}
+      backendRefs:
+      - name: {{ include "mychart.service" $ }}
+        kind: Service
+        port: {{ $.Values.service.port }}
+    {{- end }}
