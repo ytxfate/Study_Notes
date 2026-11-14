@@ -29,3 +29,10 @@ Gateway 名称
 {{- define "mychart.gateway" -}}
 {{- printf "%s-gw" .Chart.Name | trunc 63 | trimSuffix "-" }}
 {{- end -}}
+
+{{/*
+Gateway 名称
+*/}}
+{{- define "mychart.hpa" -}}
+{{- printf "%s-hpa" .Chart.Name | trunc 63 | trimSuffix "-" }}
+{{- end -}}

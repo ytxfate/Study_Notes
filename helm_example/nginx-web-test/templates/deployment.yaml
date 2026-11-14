@@ -6,7 +6,9 @@ metadata:
   name: {{ include "mychart.deploy" . }}
   namespace: {{ include "mychart.namespace" . }}
 spec:
-  replicas: 2
+  {{- if not .Values.autoscaling.enabled }}
+  replicas: {{ .Values.replicaCount }}
+  {{- end }}
   selector:
     matchLabels:
       app: {{ include "mychart.deploy" . }}
@@ -15,6 +17,9 @@ spec:
     metadata:
       labels:
         app: {{ include "mychart.deploy" . }}
+      # annotations:
+      #   时间戳注解, 让每次 upgrade 都更新 Deployment
+      #   timestamp: {{ now | quote }}
     spec:
       containers:
       - image: nginx:1.22
