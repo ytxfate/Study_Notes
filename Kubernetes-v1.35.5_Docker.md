@@ -1523,3 +1523,41 @@ spec:
 > [!Warning] 注: 两个 gateway 绑定了同一个 IPAddress , 在 EnvoyProxy 的 mergeGateways: true 下会被合并(可减少 gateway pod 数量); 可实现单 ip 多个 gateway 多端口控制访问
 
 8. 创建 HTTPRoute 及后续流程 同 [[#Nginx Gateway Fabric + metallb 场景使用]] 使用示例
+
+##### Envoy Gateway多租户
+> [!Warning] 默认场景下所有命名空间的控制面和数据面都在默认 envoy-gateway-system 命名空间下, 多租户模式则是控制面和数据面独立在各自命名空间下, 相当于一个命名空间部署了一套 Envoy Gateway
+
+与 [[#Envoy Gateway + metallb 场景使用]] 区别在于安装 Envoy Gateway 及 创建 GatewayClass 的方式不同, 其他步骤相同
+
+1. Helm 安装 Envoy Gateway
+```bash
+helm install eg-nginx-ns ./envoy-gateway-helm-v1.8.5.tgz \
+    -n nginx-ns --create-namespace \
+    --set config.envoyGateway.gateway.controllerName=gateway.envoyproxy.io/gatewayclass-controller-nginx-ns \
+    --set config.envoyGateway.provider.kubernetes.watch.type=Namespaces \
+    --set config.envoyGateway.provider.kubernetes.watch.namespaces={nginx-ns} \
+    --set crds.enabled=false
+```
+2. 创建 EnvoyProxy 及 GatewayClass
+```yaml
+apiVersion: gateway.envoyproxy.io/v1alpha1
+kind: EnvoyProxy
+metadata:
+  name: custom-proxy-config
+  namespace: nginx-ns
+spec:
+  mergeGateways: true  # 关键配置：启用合并模式
+---
+apiVersion: gateway.networking.k8s.io/v1
+kind: GatewayClass
+metadata:
+  name: eg-nginx-ns
+spec:
+  controllerName: gateway.envoyproxy.io/gatewayclass-controller-nginx-ns
+  # 引用 EnvoyProxy 资源，用于定制数据面（Deployment/Service 等）
+  parametersRef:
+    group: gateway.envoyproxy.io
+    kind: EnvoyProxy
+    name: custom-proxy-config
+    namespace: nginx-ns
+```
