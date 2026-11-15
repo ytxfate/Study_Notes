@@ -1587,6 +1587,10 @@ helm install eg-nginx-ns ./envoy-gateway-helm-v1.8.5.tgz \
     --set config.envoyGateway.provider.kubernetes.watch.type=Namespaces \
     --set config.envoyGateway.provider.kubernetes.watch.namespaces={nginx-ns} \
     --set crds.enabled=false
+
+注: 如果需要控制器监视多个命名空间则修改
+...namespaces={nginx-ns} 为 ...namespaces={nginx-ns\,nginx-ns2}
+(其中逗号前的反斜线为转义用途)
 ```
 2. 创建 EnvoyProxy 及 GatewayClass
 ```yaml
@@ -1617,4 +1621,150 @@ spec:
     kind: EnvoyProxy
     name: custom-proxy-config
     namespace: nginx-ns
+```
+###### 控制器监视多个命名空间, HTTPRoute 分散在各自命名空间
+```yaml
+apiVersion: gateway.networking.k8s.io/v1
+kind: Gateway
+metadata:
+  name: eg-nginx-ns-gw
+  namespace: nginx-ns
+spec:
+  gatewayClassName: eg-nginx-ns-gc
+  addresses:
+    - type: IPAddress
+      value: 192.168.1.240  # 指定你池中的固定IP
+  listeners:
+  - name: http-80
+    port: 80
+    protocol: HTTP
+    allowedRoutes:
+        namespaces:
+          from: Selector
+          selector:
+            matchExpressions:
+              # 利用 K8s 自动设置的命名空间名称标签进行精确匹配
+              - key: kubernetes.io/metadata.name
+                operator: In
+                values:
+                  - nginx-ns
+                  - nginx-ns2
+---
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  name: socketio-sio-route
+  namespace: nginx-ns
+spec:
+  parentRefs:
+  - name: eg-nginx-ns-gw
+    sectionName: http-80
+  rules:
+  - matches:
+    - path:
+        type: PathPrefix
+        value: /gl_ai_big_screen_sio/
+    - path:
+        type: PathPrefix
+        value: /test_socketio/
+    backendRefs:
+    - name: socketio-service
+      kind: Service
+      port: 80
+---
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  name: socketio-sio-route
+  namespace: nginx-ns2
+spec:
+  parentRefs:
+  - name: eg-nginx-ns-gw
+    namespace: nginx-ns
+    sectionName: http-80
+  rules:
+  - matches:
+    - path:
+        type: PathPrefix
+        value: /api_gl_ai_big_screen_bk/
+    backendRefs:
+    - name: socketio-service
+      kind: Service
+      port: 80
+
+```
+###### HTTPRoute 集中在同一个命名空间
+```yaml
+apiVersion: gateway.networking.k8s.io/v1
+kind: Gateway
+metadata:
+  name: eg-nginx-ns-gw
+  namespace: nginx-ns
+spec:
+  gatewayClassName: eg-nginx-ns-gc
+  addresses:
+    - type: IPAddress
+      value: 192.168.1.240  # 指定你池中的固定IP
+  listeners:
+  - name: http-80
+    port: 80
+    protocol: HTTP
+---
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  name: socketio-sio-route
+  namespace: nginx-ns
+spec:
+  parentRefs:
+  - name: eg-nginx-ns-gw
+    sectionName: http-80
+  rules:
+  - matches:
+    - path:
+        type: PathPrefix
+        value: /gl_ai_big_screen_sio/
+    - path:
+        type: PathPrefix
+        value: /test_socketio/
+    backendRefs:
+    - name: socketio-service
+      kind: Service
+      port: 80
+---
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  name: socketio-sio-route2
+  namespace: nginx-ns
+spec:
+  parentRefs:
+  - name: eg-nginx-ns-gw
+    namespace: nginx-ns
+    sectionName: http-80
+  rules:
+  - matches:
+    - path:
+        type: PathPrefix
+        value: /api_gl_ai_big_screen_bk/
+    backendRefs:
+    - name: socketio-service
+      kind: Service
+      namespace: nginx-ns2  # 显式指定目标命名空间
+      port: 80
+---
+apiVersion: gateway.networking.k8s.io/v1beta1
+kind: ReferenceGrant
+metadata:
+  name: allow-ns1-routes
+  namespace: nginx-ns2
+spec:
+  from:
+    - group: gateway.networking.k8s.io
+      kind: HTTPRoute
+      namespace: nginx-ns  # 信任来自 nginx-ns 的路由
+  to:
+    - group: ""
+      kind: Service
+      # 可选：指定 name: service-b 以限制只能引用特定服务
 ```
