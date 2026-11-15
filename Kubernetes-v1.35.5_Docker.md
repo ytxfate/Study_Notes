@@ -651,6 +651,9 @@ spec:
   persistentVolumeReclaimPolicy: Retain     # 手动回收 (默认)
   hostPath:
     path: /opt/web/01    # 目录自行创建
+  # claimRef:  # 指定特定的 Namespace 的 PVC 可使用
+  #   namespace: nginx-ns   # 只允许这个 Namespace
+  #   name: nginx-pvc       # 且必须叫这个名字
 ---
 apiVersion: v1
 kind: PersistentVolume
@@ -753,6 +756,7 @@ spec:
   resources:
     requests:
       storage: 200Mi
+  # volumeName: pv01-10m  # 指定要绑定的 PV 名称
 ```
 
 ```bash
@@ -1547,11 +1551,18 @@ metadata:
   namespace: nginx-ns
 spec:
   mergeGateways: true  # 关键配置：启用合并模式
+  provider:
+    type: Kubernetes
+    kubernetes:
+      envoyDeployment:
+        replicas: 2   # 将数据面副本数设置为 2
+      envoyService:
+        name: eg-gateway-svc   # 指定 Service 名称
 ---
 apiVersion: gateway.networking.k8s.io/v1
 kind: GatewayClass
 metadata:
-  name: eg-nginx-ns
+  name: eg-nginx-ns-gc
 spec:
   controllerName: gateway.envoyproxy.io/gatewayclass-controller-nginx-ns
   # 引用 EnvoyProxy 资源，用于定制数据面（Deployment/Service 等）
