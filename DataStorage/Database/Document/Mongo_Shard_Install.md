@@ -10,7 +10,7 @@
 
 ### 1 mongo切片集群架构
 
-![mongo切片集群架构](_Files/mongo_shard_architecture.png)
+![mongo切片集群架构](/_Files/mongo_shard_architecture.png)
 
 ### 2 配置信息
 

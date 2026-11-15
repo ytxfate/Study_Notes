@@ -30,7 +30,7 @@ git checkout dev    # 切换到 dev 分支
 git branch -a       # 查看所有分支（最好 git pull 拉取最后一次提交后使用）
 ```
 
-![git 操作](_Files/git_operate.jpg)
+![git 操作](/_Files/git_operate.jpg)
 
 ```
 若修改已提交到远程仓库，git reset 之后使用 git push -f 提交修改

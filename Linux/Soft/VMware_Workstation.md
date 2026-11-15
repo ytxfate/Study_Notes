@@ -28,4 +28,4 @@
 >`windows6.1-kb4474419-v3-x64_b5614c6cea5cb4e198717789633dca16308ef79c.msu` 
 >才能安装 `VMware Tools`
 >其次需要将虚拟机设置中的软盘设置修改为自动检测才能安装`VMware Tools`,安装完成记得将配置还原
-![[_Files/VMware_win7_floppy_setting.png]]
+![VMware_win7_floppy_setting](/_Files/VMware_win7_floppy_setting.png)
