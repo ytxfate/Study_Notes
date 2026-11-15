@@ -1,7 +1,10 @@
 {
-  "attachmentFolderPath": "_Files",
-  "showUnsupportedFiles": true,
   "alwaysUpdateLinks": true,
+  "newFileLocation": "current",
+  "showUnsupportedFiles": true,
+  "attachmentFolderPath": "_Files",
+  "strictLineBreaks": true,
   "promptDelete": false,
-  "showLineNumber": true
+  "showLineNumber": true,
+  "focusNewTab": true
 }

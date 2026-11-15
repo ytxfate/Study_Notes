@@ -1,10 +1,12 @@
 {
   "accentColor": "",
+  "theme": "obsidian",
   "interfaceFontFamily": "Monaco",
   "textFontFamily": "Monaco",
   "monospaceFontFamily": "Monaco",
   "cssTheme": "Pisum",
   "enabledCssSnippets": [
-    "编辑器内容区域宽度"
+    "调整编辑器内容区域宽度",
+    "代码块显示行号"
   ]
 }
