@@ -4,8 +4,6 @@ kind: HorizontalPodAutoscaler
 metadata:
   name: {{ include "mychart.hpa" . }}
   namespace: {{ include "mychart.namespace" . }}
-  labels:
-    {{ include "mychart.hpa" . }}
 spec:
   scaleTargetRef:
     apiVersion: apps/v1

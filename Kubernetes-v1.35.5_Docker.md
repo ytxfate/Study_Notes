@@ -1076,6 +1076,52 @@ sudo kubeadm certs check-expiration
 sudo kubeadm certs renew all
 ```
 
+##### hpa
+```yaml
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: nginx-web-test-hpa
+  namespace: nginx-ns
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: nginx-web-test-deploy
+  minReplicas: 1
+  maxReplicas: 5
+  metrics:
+    - type: Resource
+      resource:
+        name: cpu
+        target:
+          type: Utilization
+          averageUtilization: 80
+    - type: Resource
+      resource:
+        name: memory
+        target:
+          type: Utilization
+          averageUtilization: 80
+  behavior:
+    scaleUp:
+      # 没有稳定窗口（0 秒）
+      stabilizationWindowSeconds: 0
+      policies: 
+      # 每 15 秒最多允许副本数翻倍（100%）
+      - type: Percent
+        value: 100
+        periodSeconds: 15
+    scaleDown:
+      # 5 分钟（300 秒）的稳定窗口
+      stabilizationWindowSeconds: 300
+      policies: 
+      # 每 60 秒最多只减少 1 个 Pod
+      - type: Pods
+        value: 1
+        periodSeconds: 60
+```
+
 #### 附件
 cri-docker.service
 ```
